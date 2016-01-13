@@ -1,0 +1,6 @@
+TODO:
+
+Have an edict that shows all dates from the day the cult was founded (recalcs the year)
+Same, but for The Leader's birthday?
+Add aging and death for people.
+	Add 'what happens to the cult after you die' for the leader?
