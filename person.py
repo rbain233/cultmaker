@@ -44,7 +44,7 @@ class Person:
 		self.department = False
 		self.dirt = []
 		self.credibility = 0
-		self.birthday = ''
+		self.birthday = None
 		self.rank = Person.RANK_RECRUIT
 		self.age = random.randint(16, 68)
 		self.day_job = True

@@ -155,6 +155,9 @@ class Cult(CrudeObservable):
 	def __init__(self):
 		CrudeObservable.__init__(self)
 		self.name = "cult"
+		self.short_name = "cult"
+		self.members_name = "cult"
+		self.founding_date = None
 		self.membership = []
 		self.ex_members = []
 		self.departments = {}
