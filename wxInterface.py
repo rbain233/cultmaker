@@ -2,6 +2,9 @@ import wx
 from mvc import *
 import SetupPage
 from datetime import date, timedelta
+import wxLaborPoolControls
+import cult
+import person
 
 """Trying to use wxPython to set up a UI for this game."""
 
@@ -45,6 +48,11 @@ class GameStartPanel(wx.Panel):
 		self.Bind(wx.EVT_BUTTON, main_frame.OnNew, self.btn_new_game)
 		self.sizer.Add((10,10), 0, wx.CENTRE)
 		
+		self.btn_sg_game = wx.Button(self, label="SubGenius")
+		self.sizer.Add(self.btn_sg_game, 0, wx.CENTRE)
+		self.Bind(wx.EVT_BUTTON, main_frame.OnSubgenius, self.btn_sg_game)
+		self.sizer.Add((10,10), 0, wx.CENTRE)
+		
 		self.btn_load_game = wx.Button(self, label="Load Cult")
 		self.sizer.Add(self.btn_load_game, 0, wx.CENTRE)
 		self.Bind(wx.EVT_BUTTON, main_frame.OnLoad, self.btn_load_game)
@@ -65,6 +73,7 @@ class MainCultPanel(wx.Panel):
 		#Cult name, obv.
 		#Current date - or should that go in the title bar?  Yes.
 
+		
 class MainWindow(wx.Frame):
 	def __init__(self, parent, game_obj, title):
 		wx.Frame.__init__(self, parent, wx.ID_ANY, title, (200,200), (1200,800))
@@ -182,7 +191,23 @@ class MainWindow(wx.Frame):
 		self.nb.AddPage(GameStartPanel(self), "Start")
 		#And initialize them.
 		pass
+	
+	def OnSubgenius(self, e):
+		self.game.cult = cult.Cult()
+		self.game.leader = person.Person()
+		self.game.cult.name = "Church of the SubGenius"
+		self.game.cult.short_name = "SubGenius"
+		self.game.cult.members_name = "SubGenii"
+		self.game.cult.founding_date = date(1998,07,05)
+		self.game.leader.name = 'J.R. "Bob" Dobbs'
+		self.game.leader.gender = 'm'
+		self.game.leader.birthday = date(1959,4,1)
+		self.game.cult.leader = self.game.leader
+		self.game.date = date.today()
 		
+		self.GameStartedPages()
+
+	
 	def GameStartedPages(self):
 		#Game has been started/loaded, and it underway.
 		#Put in all the appropriate pages.
@@ -195,7 +220,7 @@ class MainWindow(wx.Frame):
 			self.nb.AddPage(panel_leader, "Leader")
 			panel_people = ExamplePanel(nb, "Membership")
 			self.nb.AddPage(panel_people, "Membership")
-			panel_work = ExamplePanel(nb, "Jobs")
+			panel_work = wxLaborPoolControls.AllLaborPoolsView(nb, self.game.cult)
 			self.nb.AddPage(panel_work, "Jobs")
 			panel_money = ExamplePanel(nb, "Money")
 			self.nb.AddPage(panel_money, "Money")
