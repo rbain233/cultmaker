@@ -76,7 +76,7 @@ class MainCultPanel(wx.Panel):
 		
 class MainWindow(wx.Frame):
 	def __init__(self, parent, game_obj, title):
-		wx.Frame.__init__(self, parent, wx.ID_ANY, title, (200,200), (1200,800))
+		wx.Frame.__init__(self, parent, wx.ID_ANY, title, (200,200), (1400,800))
 		self.CreateStatusBar() # A Statusbar in the bottom of the window
 		self.SetFont(wx.Font(14, wx.FONTFAMILY_SCRIPT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL ))
 		self.SetBackgroundColour(wx.LIGHT_GREY)
@@ -202,9 +202,16 @@ class MainWindow(wx.Frame):
 		self.game.leader.name = 'J.R. "Bob" Dobbs'
 		self.game.leader.gender = 'm'
 		self.game.leader.birthday = date(1959,4,1)
+		self.game.leader.rank= person.Person.RANK_LEADER
 		self.game.cult.leader = self.game.leader
+		self.game.cult.membership.append(self.game.leader)
 		self.game.date = date.today()
-		
+		for ii in range(25):
+			self.game.cult.membership.append(person.Person())
+		for ii in range(25):
+			p = person.Person()
+			p.rank = person.Person.RANK_OUTER_CIRCLE
+			self.game.cult.membership.append(p)
 		self.GameStartedPages()
 
 	
@@ -220,7 +227,7 @@ class MainWindow(wx.Frame):
 			self.nb.AddPage(panel_leader, "Leader")
 			panel_people = ExamplePanel(nb, "Membership")
 			self.nb.AddPage(panel_people, "Membership")
-			panel_work = wxLaborPoolControls.AllLaborPoolsView(nb, self.game.cult)
+			panel_work = wxLaborPoolControls.AllLaborPoolsView(nb, self.game.cult) #IT WORKS!  But it needs a smaller font size...
 			self.nb.AddPage(panel_work, "Jobs")
 			panel_money = ExamplePanel(nb, "Money")
 			self.nb.AddPage(panel_money, "Money")

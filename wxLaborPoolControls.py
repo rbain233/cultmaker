@@ -7,29 +7,29 @@ from cult import *
 #Assuming the LaborPool class counts as the model....
 #This is sort of a combination view/controller.  DEAL WITH IT.
 class LaborPoolViewRankSubsection:
-	def __init__(self, frame, sizer, labor_pool, cult, rank):
+	def __init__(self, parent, sizer, labor_pool, cult, rank):
 		self.labor_pool = labor_pool
 		self.cult = cult
 		self.rank = rank
 		self.sizer = sizer
 		self.labor_pool.addCallback(self.callbackPoolChange)
 		tmp_sizer = wx.BoxSizer(wx.HORIZONTAL)
-		self.label = wx.StaticText(frame, label=rank)
+		self.label = wx.StaticText(parent, label=rank)
 		tmp_sizer.Add(self.label, 0, wx.EXPAND | wx.ALL)
-		self.btn_zero = wx.Button(frame, label="0", style=wx.BU_EXACTFIT)
+		self.btn_zero = wx.Button(parent, label="0", style=wx.BU_EXACTFIT)
 		tmp_sizer.Add(self.btn_zero, 0, wx.EXPAND | wx.ALL)
-		self.btn_minus_ten = wx.Button(frame, label="-10", style=wx.BU_EXACTFIT)
+		self.btn_minus_ten = wx.Button(parent, label="-10", style=wx.BU_EXACTFIT)
 		tmp_sizer.Add(self.btn_minus_ten, 0, wx.EXPAND | wx.ALL)
-		self.btn_minus_one = wx.Button(frame, label="-1", style=wx.BU_EXACTFIT)
+		self.btn_minus_one = wx.Button(parent, label="-1", style=wx.BU_EXACTFIT)
 		tmp_sizer.Add(self.btn_minus_one, 0, wx.EXPAND | wx.ALL)
-		self.txt_people_count_view = wx.TextCtrl(frame, 0, size=(60,-1), style=wx.TE_RIGHT)
+		self.txt_people_count_view = wx.TextCtrl(parent, 0, size=(60,-1), style=wx.TE_RIGHT)
 		self.txt_people_count_view.SetEditable(False)
 		tmp_sizer.Add(self.txt_people_count_view, 0, wx.EXPAND | wx.ALL)
-		self.btn_plus_one = wx.Button(frame, label="+1", style=wx.BU_EXACTFIT)
+		self.btn_plus_one = wx.Button(parent, label="+1", style=wx.BU_EXACTFIT)
 		tmp_sizer.Add(self.btn_plus_one, 0, wx.EXPAND | wx.ALL)
-		self.btn_plus_ten = wx.Button(frame, label="+10", style=wx.BU_EXACTFIT)
+		self.btn_plus_ten = wx.Button(parent, label="+10", style=wx.BU_EXACTFIT)
 		tmp_sizer.Add(self.btn_plus_ten, 0, wx.EXPAND | wx.ALL)
-		self.btn_max = wx.Button(frame, label="All", style=wx.BU_EXACTFIT)
+		self.btn_max = wx.Button(parent, label="All", style=wx.BU_EXACTFIT)
 		tmp_sizer.Add(self.btn_max, 0, wx.EXPAND | wx.ALL)
 		#now bind 'em.
 		self.btn_zero.Bind(wx.EVT_BUTTON, self.zeroPeople)
@@ -102,24 +102,24 @@ class LaborPoolViewRankSubsection:
 		self.labor_pool.delCallback(self.callbackPoolChange)
 
 class LaborPoolView:
-	def __init__(self, frame, sizer, labor_pool, cult):
+	def __init__(self, parent, sizer, labor_pool, cult):
 		self.labor_pool = labor_pool
 		self.sizer = sizer
 		self.cult = cult
-		self.frame = frame
+		self.parent = parent
 		rank_order = (Person.RANK_RECRUIT, Person.RANK_OUTER_CIRCLE, Person.RANK_INNER_CIRCLE)
-		self.label = wx.StaticText(frame, label=labor_pool.short_name)
+		self.label = wx.StaticText(parent, label=labor_pool.short_name)
 		self.sizer.Add(self.label, 0, wx.ALL)
 		self.subsections = []
 		
 		for rank in rank_order:
 			if self.labor_pool.rankOK(rank):
-				lp = LaborPoolViewRankSubsection(self.frame, self.sizer, self.labor_pool, self.cult, rank)
+				lp = LaborPoolViewRankSubsection(self.parent, self.sizer, self.labor_pool, self.cult, rank)
 				self.subsections += [lp]
 				#self.sizer.Add(lp.sizer, 0, wx.ALL)
 			else:
-				self.sizer.Add(wx.StaticText(frame, label="X"), 0, wx.ALL)
-		self.sizer.Add(wx.StaticText(frame, label="Leader"), 0, wx.ALL)
+				self.sizer.Add(wx.StaticText(parent, label="X"), 0, wx.ALL)
+		self.sizer.Add(wx.StaticText(parent, label="Leader"), 0, wx.ALL)
 
 		if labor_pool.rankOK(Person.RANK_LEADER):
 			pass #This one might just be a checkbox?
@@ -153,14 +153,28 @@ class UnassignedCultistsView:
 		
 	def update(self, cult):
 		for rank in self.rank_order:
-			list = cult.getUnassignedLaborByRank(rank)
-			self.ranked_fields[rank].ChangeValue(str(len(list)))
-
+			if rank == Person.RANK_LEADER:
+				leader = cult.getLeader()
+				if len(leader) == 0:
+					self.ranked_fields[rank].ChangeValue('NONE')
+					return
+				else:
+					leader = leader[0]
+					
+				if leader.department:
+					self.ranked_fields[rank].ChangeValue(leader.department.getName())
+				else:
+					self.ranked_fields[rank].ChangeValue('idle')
+			else:
+				list = cult.getUnassignedLaborByRank(rank)
+				self.ranked_fields[rank].ChangeValue(str(len(list)))
+				
 class AllLaborPoolsView(wx.Panel):
 	"""This page is supposed to show all the cult's labor pools.
 	When pools are added/lost, update this."""
 	def __init__(self, parent, cult):
 		wx.Panel.__init__(self, parent)
+		self.SetFont(wx.Font(8, wx.FONTFAMILY_SCRIPT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL ))
 		self.cult = cult
 		self.parent = parent
 		self.cult.addCallback(self.update)
@@ -169,7 +183,7 @@ class AllLaborPoolsView(wx.Panel):
 		self.sizer = wx.FlexGridSizer(0, 5, 9, 25)
 		self.labor_pool_watchers = {}
 		"""Create one view row for unassigned cultists, and one for each labor pool."""
-		self.unassigned_cultists_view = UnassignedCultistsView(self.parent, self.sizer, cult)
+		self.unassigned_cultists_view = UnassignedCultistsView(self, self.sizer, cult)
 		#self.sizer.Add(self.unassigned_cultists_view.sizer, 0, wx.ALL)
 		self.update(cult)
 	
@@ -180,7 +194,7 @@ class AllLaborPoolsView(wx.Panel):
 			if cult.departments[dept_name] not in self.labor_pool_watchers.keys():
 				#print "making new", dept_name
 				#add a new labor_pool watcher.
-				self.labor_pool_watchers[cult.departments[dept_name]] = LaborPoolView(self.parent, self.sizer, cult.departments[dept_name], cult) #Adds itself to the window.
+				self.labor_pool_watchers[cult.departments[dept_name]] = LaborPoolView(self, self.sizer, cult.departments[dept_name], cult) #Adds itself to the window.
 				self.sizer.Layout() #THAT fixed the 'form in the corner' problem.
 				
 				
@@ -212,7 +226,7 @@ if __name__ == "__main__":
 	#sizer.Add(ucv.sizer, 0, wx.ALL)
 	controller = AllLaborPoolsView(frame, cult)
 	#controller = LaborPoolView(frame, test_pool, cult)
-	sizer.Add(controller.sizer, 0, wx.ALL)
+	sizer.Add(controller, 0, wx.ALL)
 	frame.SetSizer(sizer)
 	frame.Show()
 	app.MainLoop()
