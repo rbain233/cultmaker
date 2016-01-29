@@ -142,7 +142,6 @@ class LaborPoolView:
 			self.leader_checkbox.SetValue(True)
 		else:
 			self.leader_checkbox.SetValue(False)
-		print "!"
 		
 	def destroy(self):
 		#This is being removed, so delete all the internal parts, too.
