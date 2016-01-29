@@ -104,6 +104,7 @@ class LaborPoolViewRankSubsection:
 class LaborPoolView:
 	def __init__(self, parent, sizer, labor_pool, cult):
 		self.labor_pool = labor_pool
+		self.labor_pool.addCallback(self.callbackPoolChange)
 		self.sizer = sizer
 		self.cult = cult
 		self.parent = parent
@@ -119,11 +120,30 @@ class LaborPoolView:
 				#self.sizer.Add(lp.sizer, 0, wx.ALL)
 			else:
 				self.sizer.Add(wx.StaticText(parent, label="X"), 0, wx.ALL)
-		self.sizer.Add(wx.StaticText(parent, label="Leader"), 0, wx.ALL)
-
+		
 		if labor_pool.rankOK(Person.RANK_LEADER):
-			pass #This one might just be a checkbox?
+			self.leader_checkbox = wx.CheckBox(self.parent, label = 'Assign leader') 
+			self.leader_checkbox.Bind(wx.EVT_CHECKBOX, self.checkLeader)
+			self.sizer.Add(self.leader_checkbox, 0, wx.ALL)
+		
 
+	def checkLeader(self, evt):
+		list = self.cult.getLeader()
+		if self.leader_checkbox.GetValue():
+			#Unassign leader from any previous use, and assign him here.
+			self.cult.assignLabor(self.labor_pool.name, list)
+		else:
+			#Unassign the leader from this one.
+			self.cult.removeLabor(self.labor_pool.name, list)
+		
+	def callbackPoolChange(self, labor_pool):
+		list = self.labor_pool.getPeopleList(Person.RANK_LEADER)
+		if list and list[0].department and list[0].department == self.labor_pool:
+			self.leader_checkbox.SetValue(True)
+		else:
+			self.leader_checkbox.SetValue(False)
+		print "!"
+		
 	def destroy(self):
 		#This is being removed, so delete all the internal parts, too.
 		for lp in self.subsections:
@@ -162,7 +182,8 @@ class UnassignedCultistsView:
 					leader = leader[0]
 					
 				if leader.department:
-					self.ranked_fields[rank].ChangeValue(leader.department.getName())
+					#self.ranked_fields[rank].ChangeValue(leader.department.getName())
+					self.ranked_fields[rank].ChangeValue('working')
 				else:
 					self.ranked_fields[rank].ChangeValue('idle')
 			else:
