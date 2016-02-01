@@ -40,6 +40,7 @@ class LaborPoolViewRankSubsection:
 		self.btn_plus_ten.Bind(wx.EVT_BUTTON, self.plusTenPeople)
 		self.btn_max.Bind(wx.EVT_BUTTON, self.maxPeople)
 		self.sizer.Add(tmp_sizer, 0, wx.ALL) #This all needs to be one 'chunk' for the sizer.
+		self.callbackPoolChange(self.labor_pool)
 		
 	def zeroPeople(self, evt):
 		#Remove all people of (rank)
@@ -125,16 +126,19 @@ class LaborPoolView:
 			self.leader_checkbox = wx.CheckBox(self.parent, label = 'Assign leader') 
 			self.leader_checkbox.Bind(wx.EVT_CHECKBOX, self.checkLeader)
 			self.sizer.Add(self.leader_checkbox, 0, wx.ALL)
-		
 
 	def checkLeader(self, evt):
 		list = self.cult.getLeader()
-		if self.leader_checkbox.GetValue():
-			#Unassign leader from any previous use, and assign him here.
-			self.cult.assignLabor(self.labor_pool.name, list)
+		if len(list) > 0:
+			if self.leader_checkbox.GetValue():
+				#Unassign leader from any previous use, and assign him here.
+				self.cult.assignLabor(self.labor_pool.name, list)
+			else:
+				#Unassign the leader from this one.
+				self.cult.removeLabor(self.labor_pool.name, list)
 		else:
-			#Unassign the leader from this one.
-			self.cult.removeLabor(self.labor_pool.name, list)
+			self.leader_checkbox.SetValue(False)
+		#BUG: This will let you check it if there's no leader. That shouldn't happen in play....
 		
 	def callbackPoolChange(self, labor_pool):
 		list = self.labor_pool.getPeopleList(Person.RANK_LEADER)

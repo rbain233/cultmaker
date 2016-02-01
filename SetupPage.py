@@ -9,14 +9,18 @@ bonus_list = ["had a well-paying job", "was independently wealthy", "was a talen
 
 class InlineCalendar(wx.BoxSizer):
 	month_list = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
-	def __init__(self, parent, start_date=False):
+	def __init__(self, parent, start_date=False, show_day=True):
 		day_list = [str(x) for x in range(1,32)]
 		wx.BoxSizer.__init__(self, wx.HORIZONTAL)
-			
+		self.show_day_field = show_day
 		self.month_field = wx.ComboBox(parent, choices=InlineCalendar.month_list, style=wx.CB_READONLY)
 		self.Add(self.month_field)
+		
 		self.day_field = wx.ComboBox(parent, choices=day_list, style=wx.CB_READONLY)
+		if not self.show_day_field:
+			self.day_field.Hide()
 		self.Add(self.day_field)
+			
 		self.year_field = wx.TextCtrl(parent, 0, size=(100, 30))
 		self.year_field.SetMaxLength(4)
 		self.Add(self.year_field)

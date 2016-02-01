@@ -1,10 +1,12 @@
 import wx
+import wx.html
 from mvc import *
 import SetupPage
 from datetime import date, timedelta
 import wxLaborPoolControls
 import cult
 import person
+#include <wx/html/htmlwin.h>
 
 """Trying to use wxPython to set up a UI for this game."""
 
@@ -66,14 +68,139 @@ class GameStartPanel(wx.Panel):
 		self.SetSizer(self.sizer)
 		
 class MainCultPanel(wx.Panel):
-	def __init__(self, parent):
+	def __init__(self, parent, game):
 		wx.Panel.__init__(self, parent)
+		self.game = game
+		self.cult = game.cult
+		cult = game.cult
+		self.sizer = wx.BoxSizer(wx.VERTICAL)
 		#Running cult: Has general cult info page.
 		#What-all needs to be here?
 		#Cult name, obv.
-		#Current date - or should that go in the title bar?  Yes.
-
+		self.cult_name_field = wx.StaticText(self, label=cult.name, style=wx.ALIGN_CENTRE_HORIZONTAL)
+		self.sizer.Add(self.cult_name_field)
+		#TODO: Way to change cult's name - causes a fame hit?
 		
+		#Cult fame and reputation
+		self.cult_fame_field = wx.StaticText(self, label="")
+		self.sizer.Add(self.cult_fame_field)
+		
+		#Cult membership
+		self.cult_membership_field = wx.StaticText(self, label="")
+		self.sizer.Add(self.cult_membership_field)
+		#Cult $$$
+		self.cult_money_field = wx.StaticText(self, label="")
+		self.sizer.Add(self.cult_money_field)
+		#TODO: -/+ money from last month.
+		self.cult_money_diff_field = wx.StaticText(self, label="")
+		self.sizer.Add(self.cult_money_diff_field)
+		#TODO: Overall membership mood?
+		self.cult_mood_field = wx.StaticText(self, label="")
+		self.sizer.Add(self.cult_mood_field)
+		#Cult activities log? (Needs a scrollbar.)
+		self.log_text_field = wx.TextCtrl(self, size = (600,500), style = wx.TE_MULTILINE + wx.TE_READONLY) 
+		self.sizer.Add(self.log_text_field)
+		self.SetSizer(self.sizer)
+		self.update()
+	
+	def getCultFameString(self):
+		return "Your cult is " + cult.getFameTitle() + " and " + cult.getPopularityTitle() + "."
+		
+	def update(self):
+		self.cult_name_field.SetLabel(self.cult.name)
+		#Cult fame and reputation
+		self.cult_fame_field.SetLabel("Your cult is " + self.cult.getFameTitle() +  " and " + self.cult.getPopularityTitle())
+		#Cult membership
+		#Add changes from last month?
+		self.cult_membership_field.SetLabel("Membership: " + str(len(self.cult.membership)))
+		#Cult $$$
+		self.cult_money_field.SetLabel("Cult treasury: $" + str(self.cult.funds))
+		#TODO: -/+ money from last month.
+		self.cult_money_diff_field.SetLabel("(under construction)")
+		#TODO: Overall membership mood?
+		self.cult_mood_field.SetLabel("Cult morale: (under construction)")
+		#Cult activities log? (Needs a scrollbar.)
+		for ii in range(1, 20):
+			self.log_text_field.WriteText("%d: Activities log (Under construction)\n" % ii) 
+		pass
+
+class FinancePanel(wx.Panel):
+	def __init__(self, parent, game):
+		wx.Panel.__init__(self, parent)
+		self.game = game
+		self.game.cult.addCallback(self.cultUpdate)
+		self.sizer = wx.BoxSizer(wx.VERTICAL or wx.ALIGN_CENTER)
+		self.header = wx.BoxSizer(wx.HORIZONTAL or wx.ALIGN_CENTER)
+		self.header.Add(wx.StaticText(self, label="Select month: "))
+		self.date_selector = SetupPage.InlineCalendar(self, show_day=False)
+		self.header.Add(self.date_selector)
+		self.btn_load_month = wx.Button(self, label="View", style=wx.BU_EXACTFIT)
+		self.header.Add(self.btn_load_month)
+		#The button needs to be bound.
+		
+		self.btn_this_month = wx.Button(self, label="Now: " + game.date.strftime("%B %Y"), style=wx.BU_EXACTFIT)
+		self.header.Add(self.btn_this_month)
+		#The button needs to be bound.
+		
+		self.header.Layout()
+		self.sizer.Add(self.header)
+		
+		#needs (at least) two subpanels - this month(projected) and previous month
+		#No it doesn't, it just needs to render the page correctly.
+		#self.present_panel = wx.html.HtmlWindow(self) #This isn't showing up....
+		#self.present_panel.SetPage("<i>HTML PANEL</i>")
+		self.present_panel = wx.Panel(self)
+		self.present_panel_sizer = wx.BoxSizer(wx.VERTICAL)
+		self.present_panel_sizer.Add(wx.StaticText(self.present_panel, label="This month"))
+		self.present_panel.SetSizer(self.present_panel_sizer)
+		self.sizer.Add(self.present_panel)
+		
+		self.past_panel = wx.Panel(self)
+		self.past_panel_sizer = wx.BoxSizer(wx.VERTICAL)
+		self.past_panel_sizer.Add(wx.StaticText(self.past_panel, label="Past month"))
+		self.past_panel.SetSizer(self.past_panel_sizer)
+		self.sizer.Add(self.past_panel)
+		
+		self.SetSizer(self.sizer)
+		self.sizer.Layout()
+		
+		#looks like you can't put a notebook inside another notebook, though?
+		#So, a radio button or a dropdown?
+		#Finance panel.
+		#Track projected money gains/losses for the month.
+		#Donations and sales: Average all previous months, add wishful thinking? 
+		#(oooh, Fanaticism can skew them higher!)
+		#TODO: Ability to check past months?
+		#Total treasury
+		
+	def cultUpdate(self, cult):
+		#Update when a new month starts? No, different callback for that.
+		
+		#Or when the user incurs expenses.
+		#If the window is looking at the current month, this does something.
+		#Otherwise, disconnect it?
+		#Or have it look at last month?
+		pass
+		
+	def monthUpdate(self, new_month):
+		#snapshot the current month's financial data, save it to disk.
+		#advance to the new month.
+		#Calculate the month's expenses.
+		pass
+	
+	#Previous Months:
+	def assemblePageFromFile(self):
+		pass
+	
+	#Current Month:
+	def assemblePageFromCult(self):
+		#Blank the fields
+		#Fill it in:
+		#Income:  Donations (Projected), selling crap (projected), dues (ditto), crimes, lawsuits?
+		#Outgo: Labor pool costs, rent, buying stuff, fees.
+		#And the total.
+		pass
+	
 class MainWindow(wx.Frame):
 	def __init__(self, parent, game_obj, title):
 		wx.Frame.__init__(self, parent, wx.ID_ANY, title, (200,200), (1400,800))
@@ -221,7 +348,7 @@ class MainWindow(wx.Frame):
 		if self.game.cult:
 			nb = self.nb
 			self.nb.DeleteAllPages()
-			panel_main = ExamplePanel(nb, "Main")
+			panel_main = MainCultPanel(nb, self.game)
 			self.nb.AddPage(panel_main, "Main")
 			panel_leader = ExamplePanel(nb, "Leader")
 			self.nb.AddPage(panel_leader, "Leader")
@@ -229,8 +356,8 @@ class MainWindow(wx.Frame):
 			self.nb.AddPage(panel_people, "Membership")
 			panel_work = wxLaborPoolControls.AllLaborPoolsView(nb, self.game.cult) #IT WORKS!  But it needs a smaller font size...
 			self.nb.AddPage(panel_work, "Jobs")
-			panel_money = ExamplePanel(nb, "Money")
-			self.nb.AddPage(panel_money, "Money")
+			panel_money = FinancePanel(nb, self.game)
+			self.nb.AddPage(panel_money, "Finance")
 			panel_property = ExamplePanel(nb, "Property")
 			self.nb.AddPage(panel_property, "Property")
 			panel_inventory = ExamplePanel(nb, "Inventory")
