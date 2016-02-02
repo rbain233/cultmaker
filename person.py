@@ -40,7 +40,7 @@ class Person:
 		#self.loyalty = 0
 		self.fanaticism = 0
 		#self.stress = 0 # Deprecated - using 'morale' instead.
-		self.morale = 0
+		self.morale = 50
 		self.department = False
 		self.dirt = []
 		self.credibility = 0

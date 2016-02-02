@@ -177,6 +177,12 @@ class Cult(CrudeObservable):
 		self.recruit_base_morale_max = 80 #need ways to avoid this...
 		self.dogma = 10
 		self.supplies = {} #Pamphlets, books and so on.
+		self.last_month_membership_count = 0
+		self.last_month_fame = 0
+		self.last_month_popularity = 0
+		self.last_month_funds = 0
+		self.last_month_morale = 0
+		
 	
 	def proselytize(self, recruit_percent, audience, fanaticism_bonus):
 		#I looked up the spelling.
@@ -235,6 +241,13 @@ class Cult(CrudeObservable):
 		return status
 	
 	def membershipMonthlyChecks(self):
+		#update these for next month, BEFORE any changes.
+		self.last_month_fame = self.fame
+		self.last_month_popularity = self.popularity
+		self.last_month_funds = self.funds
+		self.last_month_membership_count = len(self.membership)
+		self.last_month_morale = self.calculateAverageMorale() #(deliberately inaccurate)
+
 		msg = ""
 		msg += self.loyaltyChecks()
 		msg += self.promoteOuterCheck()
@@ -533,7 +546,34 @@ class Cult(CrudeObservable):
 	
 	def setSupplies(self, merch_name, qty):
 		self.supplies[merch_name] = qty
-
+	
+	def calculateAverageMorale(self, accurate = False):
+		#This number should get distorted, if accurate = false.
+		#High-fanaticism people will try to act happier, as will people in an authoritarian cult,
+		#and if the Leader is too fanatical, it will skew upwards as well.
+		sum = 0
+		count = 0
+		for cultist in self.membership:
+			sum += cultist.morale
+			if not accurate:
+				if cultist.fanaticism > 50:
+					sum += 10
+				if cultist.fanaticism > 75:
+					sum += 10
+				if self.authoritarianism > 50:
+					sum += 10
+				if self.authoritarianism > 75:
+					sum += 10
+		average_morale = sum / len(self.membership)
+		if not accurate:
+			leader = self.getLeader()[0]
+			if leader.fanaticism > 50:
+				average_morale += 10
+			if leader.fanaticism > 75:
+				average_morale += 10
+		return min(average_morale, 99) #Can't go over 100?  Or will it matter?
+		
+		
 #Having outer circle members allows:
 #Orientation/Welcome/Indoctrination
 #Fundraising/panhandling

@@ -23,7 +23,7 @@ class GameObject(CrudeObservable):
 		
 	def advanceMonth(self):
 		#Do all the things necessary to move the game ahead one month.
-		#Do functuions in here - cult activities, enemies, govenment, media, random stuff....
+		#Do functions in here - cult activities, enemies, govenment, media, random stuff....
 		#And advance to next month.
 		
 		next_month = self.date + timedelta(days=32)
@@ -73,56 +73,116 @@ class MainCultPanel(wx.Panel):
 		self.game = game
 		self.cult = game.cult
 		cult = game.cult
+		
+		self.last_month_funds = 0
+		self.last_month_membership = 0
+		self.last_month_morale = 0
+		
 		self.sizer = wx.BoxSizer(wx.VERTICAL)
 		#Running cult: Has general cult info page.
 		#What-all needs to be here?
 		#Cult name, obv.
 		self.cult_name_field = wx.StaticText(self, label=cult.name, style=wx.ALIGN_CENTRE_HORIZONTAL)
-		self.sizer.Add(self.cult_name_field)
+		
+		self.sizer.Add(self.cult_name_field, 0, wx.ALIGN_CENTER)
 		#TODO: Way to change cult's name - causes a fame hit?
+		self.sizer.Add((20,20))
+		sides_sizer = wx.BoxSizer(wx.HORIZONTAL)
+		right_side_sizer = wx.BoxSizer(wx.VERTICAL)
 		
 		#Cult fame and reputation
 		self.cult_fame_field = wx.StaticText(self, label="")
-		self.sizer.Add(self.cult_fame_field)
+		right_side_sizer.Add(self.cult_fame_field)
 		
 		#Cult membership
 		self.cult_membership_field = wx.StaticText(self, label="")
-		self.sizer.Add(self.cult_membership_field)
+		right_side_sizer.Add(self.cult_membership_field)
 		#Cult $$$
 		self.cult_money_field = wx.StaticText(self, label="")
-		self.sizer.Add(self.cult_money_field)
+		right_side_sizer.Add(self.cult_money_field)
 		#TODO: -/+ money from last month.
 		self.cult_money_diff_field = wx.StaticText(self, label="")
-		self.sizer.Add(self.cult_money_diff_field)
+		right_side_sizer.Add(self.cult_money_diff_field)
 		#TODO: Overall membership mood?
 		self.cult_mood_field = wx.StaticText(self, label="")
-		self.sizer.Add(self.cult_mood_field)
+		right_side_sizer.Add(self.cult_mood_field)
 		#Cult activities log? (Needs a scrollbar.)
 		self.log_text_field = wx.TextCtrl(self, size = (600,500), style = wx.TE_MULTILINE + wx.TE_READONLY) 
-		self.sizer.Add(self.log_text_field)
+		sides_sizer.Add(self.log_text_field, 1, wx.ALIGN_LEFT)
+		sides_sizer.Add((20,20))
+		sides_sizer.Add(right_side_sizer)
+		self.sizer.Add(sides_sizer)
 		self.SetSizer(self.sizer)
 		self.update()
 	
-	def getCultFameString(self):
-		return "Your cult is " + cult.getFameTitle() + " and " + cult.getPopularityTitle() + "."
-		
+	#Gets called at the start of the month, never any other time?
 	def update(self):
 		self.cult_name_field.SetLabel(self.cult.name)
 		#Cult fame and reputation
-		self.cult_fame_field.SetLabel("Your cult is " + self.cult.getFameTitle() +  " and " + self.cult.getPopularityTitle())
+		popularity_string = "Your cult is " + self.cult.getFameTitle()
+		if self.cult.fame > 10:
+			popularity_string +=  " and is " + self.cult.getPopularityTitle()
+			if self.cult.fame < 50:
+				popularity_string += " by those who know of it."
+		self.cult_fame_field.SetLabel(popularity_string)
 		#Cult membership
 		#Add changes from last month?
-		self.cult_membership_field.SetLabel("Membership: " + str(len(self.cult.membership)))
+		membership = len(self.cult.membership)
+		if membership > self.cult.last_month_membership_count:
+			adj_string = "(+" + str(membership - self.cult.last_month_membership_count) + ")"
+		elif membership < self.cult.last_month_membership_count:
+			adj_string = "(-" + str(self.cult.last_month_membership_count - membership) + ")"
+		else:
+			adj_string = ""
+		self.cult_membership_field.SetLabel("Membership: " + str(membership) + " " + adj_string)
 		#Cult $$$
-		self.cult_money_field.SetLabel("Cult treasury: $" + str(self.cult.funds))
-		#TODO: -/+ money from last month.
-		self.cult_money_diff_field.SetLabel("(under construction)")
-		#TODO: Overall membership mood?
-		self.cult_mood_field.SetLabel("Cult morale: (under construction)")
-		#Cult activities log? (Needs a scrollbar.)
+		if self.cult.funds > self.cult.last_month_funds:
+			adj_string = "(+" + str(self.cult.funds - self.cult.last_month_funds) + ")"
+		elif self.cult.funds < self.cult.last_month_funds:
+			adj_string = "(-" + str(self.cult.last_month_funds - self.cult.funds) + ")"
+		else:
+			adj_string = ""
+		self.cult_money_field.SetLabel("Cult treasury: $" + str(self.cult.funds) + " "  + adj_string)
+		
+		morale = self.cult.calculateAverageMorale(accurate=False) #We want it subjective.
+		diff = morale - self.cult.last_month_morale
+		if diff < -20: 
+			adj_string = "---"
+		elif diff < -10:
+			adj_string = "--"
+		elif diff < 0:
+			adj_string = "-"
+		elif diff == 0:
+			adj_string = ""
+		elif diff > 20:
+			adj_string = "+++"
+		elif diff > 10:
+			adj_string = "++"
+		elif diff > 0:
+			adj_string = "+"
+			
+		if morale < 20:
+			mood_str = "disintegrating"
+		if morale >= 30:
+			mood_str = "miserable"
+		if morale >= 40:
+			mood_str = "unhappy"
+		if morale >= 50:
+			mood_str = "ok"
+		if morale >= 60:
+			mood_str = "happy"
+		if morale >= 60:
+			mood_str = "joyous"
+		if morale >= 80:
+			mood_str = "blissful"
+		if morale >= 90:
+			mood_str = "ecstatic"
+		
+		#TODO: Take out raw value, it's for debugging.
+		self.cult_mood_field.SetLabel("Cult morale: " + mood_str + " (" + str(morale) + ") " + adj_string)
+		#Cult activities log
 		for ii in range(1, 20):
 			self.log_text_field.WriteText("%d: Activities log (Under construction)\n" % ii) 
-		pass
 
 class FinancePanel(wx.Panel):
 	def __init__(self, parent, game):
@@ -245,29 +305,9 @@ class MainWindow(wx.Frame):
 		self.nb = nb
 		
 		self.addStartPages()
-		#Individual pages go here.
-		"""
-		panel_main = SetupPage.SetupPage(nb)
-		nb.AddPage(panel_main, "Main")
-		panel_leader = ExamplePanel(nb, "Leader")
-		nb.AddPage(panel_leader, "Leader")
-		panel_people = ExamplePanel(nb, "Membership")
-		nb.AddPage(panel_people, "Membership")
-		panel_work = ExamplePanel(nb, "Jobs")
-		nb.AddPage(panel_work, "Jobs")
-		panel_money = ExamplePanel(nb, "Money")
-		nb.AddPage(panel_money, "Money")
-		panel_property = ExamplePanel(nb, "Property")
-		nb.AddPage(panel_property, "Property")
-		panel_inventory = ExamplePanel(nb, "Inventory")
-		nb.AddPage(panel_inventory, "Inventory")
-		panel_beliefs = ExamplePanel(nb, "Beliefs")
-		nb.AddPage(panel_beliefs, "Beliefs")
-		panel_enemies = ExamplePanel(nb, "Enemies")
-		nb.AddPage(panel_enemies, "Enemies")
-		"""
 		
 		self.sizer.Add(self.nb, 1, wx.EXPAND)
+		#For some reason, trying to add a button here makes nothing show up, so I'll have to add it on individual pages?  Blargh.
 		self.sizer.Layout()
 		wx.CallAfter(nb.Refresh) #Gets rid of black square that was appearing on the topmost page.
 		self.game_update(self.game)
@@ -328,6 +368,7 @@ class MainWindow(wx.Frame):
 		self.game.cult.founding_date = date(1998,07,05)
 		self.game.leader.name = 'J.R. "Bob" Dobbs'
 		self.game.leader.gender = 'm'
+		self.game.leader.morale = 55
 		self.game.leader.birthday = date(1959,4,1)
 		self.game.leader.rank= person.Person.RANK_LEADER
 		self.game.cult.leader = self.game.leader
