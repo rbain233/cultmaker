@@ -183,7 +183,39 @@ class MainCultPanel(wx.Panel):
 		#Cult activities log
 		for ii in range(1, 20):
 			self.log_text_field.WriteText("%d: Activities log (Under construction)\n" % ii) 
-
+			
+class PropertyPanel(wx.Panel):
+	def __init__(self, parent, game):
+		wx.Panel.__init__(self, parent)
+		self.game = game
+		self.cult = game.cult
+		self.sizer = wx.BoxSizer(wx.VERTICAL)
+		
+		self.owned_sizer = wx.BoxSizer(wx.VERTICAL)
+		self.sizer.Add(wx.StaticText(self, label="Cult Properties"), 0, wx.ALIGN_CENTER)
+		self.sizer.Add(self.owned_sizer)
+		self.sizer.Add(wx.StaticLine(self))
+		self.for_sale_sizer = wx.BoxSizer(wx.VERTICAL)
+		self.sizer.Add(wx.StaticText(self, label="Properties Available"), 0, wx.ALIGN_CENTER)
+		self.sizer.Add(self.for_sale_sizer)
+		self.SetSizer(self.sizer)
+		self.listProperties()
+	
+	def listProperties(self):
+		self.for_sale_sizer.Clear()
+		self.owned_sizer.Clear() #Gets rid of existing fields.
+		
+		#add all cult properties to owned_sizer, and all available properties to for_sale_sizer.
+		#What-all needs to be shown for a property?
+		#If for sale, price &/or Monthly rent.
+		#Monthly upkeep (If owned)
+		#Name, description, people capacity (max), infrastructure needs.
+		#"Buy" or "Sell" button.
+		#Change name button?  (To keep different buildings separate.)
+		#Buying or selling a building should take effect next month?
+		#If you buy a property, 'clone' it so you can buy more than one?
+		pass
+		
 class FinancePanel(wx.Panel):
 	def __init__(self, parent, game):
 		wx.Panel.__init__(self, parent)
@@ -399,7 +431,7 @@ class MainWindow(wx.Frame):
 			self.nb.AddPage(panel_work, "Jobs")
 			panel_money = FinancePanel(nb, self.game)
 			self.nb.AddPage(panel_money, "Finance")
-			panel_property = ExamplePanel(nb, "Property")
+			panel_property = PropertyPanel(nb, self.game)
 			self.nb.AddPage(panel_property, "Property")
 			panel_inventory = ExamplePanel(nb, "Inventory")
 			self.nb.AddPage(panel_inventory, "Inventory")
