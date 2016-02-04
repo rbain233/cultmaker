@@ -221,20 +221,19 @@ class PropertyPanel(wx.Panel):
 #labor pool costs/returns (both?)
 #Property costs(/returns?)
 #Ok, should this handle both profit and loss, or just one? For now, do both.
-class FinanceLineItem(wx.Panel):
+class FinanceLineItem:
 	def __init__(self, parent, watchee = None, name="", gain=0, loss=0):
-		wx.Panel.__init__(self, parent)
 		
-		sizer = wx.BoxSizer(wx.HORIZONTAL)
-		self.name_field = wx.StaticText(self)
-		sizer.Add(self.name_field, 1, wx.ALIGN_LEFT)
-		sizer2 = wx.BoxSizer(wx.VERTICAL)
-		self.gain_field = wx.StaticText(self)
-		self.loss_field = wx.StaticText(self)
-		sizer2.Add(self.gain_field, 1, wx.ALIGN_RIGHT)
-		sizer2.Add(self.loss_field, 1, wx.ALIGN_RIGHT)
-		sizer.Add(sizer2)
-		self.SetSizer(sizer)
+		#sizer = wx.BoxSizer(wx.HORIZONTAL)
+		self.name_field = wx.StaticText(parent)
+		#sizer.Add(self.name_field, 1, wx.ALIGN_LEFT)
+		self.right_sizer = wx.BoxSizer(wx.VERTICAL)
+		self.gain_field = wx.StaticText(parent)
+		self.loss_field = wx.StaticText(parent)
+		self.right_sizer.Add(self.gain_field, 1, wx.ALIGN_RIGHT)
+		self.right_sizer.Add(self.loss_field, 1, wx.ALIGN_RIGHT)
+		#sizer.Add(sizer2)
+		#self.SetSizer(sizer)
 		
 		if watchee:
 			#Get name and (current) amount from watchee, 
@@ -249,6 +248,12 @@ class FinanceLineItem(wx.Panel):
 			self.loss = loss
 			print self.name, self.gain, self.loss
 			self.setFields()
+	
+	def getLeftElement(self):
+		return self.name_field
+		
+	def getRightElement(self):
+		return self.right_sizer
 		
 	def setFields(self):
 		self.name_field.SetLabel(self.name)
@@ -256,6 +261,9 @@ class FinanceLineItem(wx.Panel):
 		self.gain_field.Show(self.gain != 0)
 		self.loss_field.SetLabel(str(self.loss))
 		self.loss_field.Show(self.loss != 0)
+		self.right_sizer.Layout()
+		#BUG: This needs to resize itself when the values are updated.
+		#Find out how.
 		
 	def update(self, watchee):
 		self.name = watchee.name
@@ -272,15 +280,20 @@ class PresentFinancePanel(wx.Panel):
 		self.cult = game.cult
 		self.list = {}
 		#Or are we just summing them up?
-		self.sizer = wx.BoxSizer(wx.VERTICAL)
+		#self.sizer = wx.BoxSizer(wx.VERTICAL) #TODO: Use a wx.FlexGridSizer? Each line-item would take 2 or 4 cells...
+		self.sizer = wx.FlexGridSizer(0, 2, 9, 25)
 		self.SetSizer(self.sizer)
 		
 		#TODO: Add 'start of month' and 'end of month' totals.
 		self.start_total_line = FinanceLineItem(self, name = "Cult treasury, start of month:", gain = self.cult.funds)
 		print "funding ", self.cult.funds
-		self.sizer.Add(self.start_total_line)
+		self.sizer.Add(self.start_total_line.getLeftElement())
+		self.sizer.Add(self.start_total_line.getRightElement())
 		self.end_total_line = FinanceLineItem(self, name = "Projected end-of-month total:", gain = 999)
-		self.sizer.Add(self.end_total_line)
+		#self.sizer.Add(self.end_total_line)
+		self.sizer.Add(self.end_total_line.getLeftElement())
+		self.sizer.Add(self.end_total_line.getRightElement())
+		
 		self.update(self.cult)
 	
 	def update(self, cult):
@@ -288,15 +301,21 @@ class PresentFinancePanel(wx.Panel):
 		for lp_name in cult.departments:
 			lp = cult.departments[lp_name]
 			if lp not in self.list:
-				self.list[lp] = FinanceLineItem(self, watchee = lp)
+				item = FinanceLineItem(self, watchee = lp)
+				self.list[lp] = item
 				ii = self.sizer.GetItemCount()
-				self.sizer.Insert(ii - 1, self.list[lp], 1, wx.EXPAND)
+				#self.sizer.Insert(ii - 1, self.list[lp], 1, wx.EXPAND)
+				self.sizer.Insert(ii - 2, item.getLeftElement(), 1, wx.EXPAND)
+				self.sizer.Insert(ii - 1, item.getRightElement(), 1, wx.EXPAND)
+				#self.sizer.Add(self.end_total_line.getLeftElement())
+				#self.sizer.Add(self.end_total_line.getRightElement())
 				print ii, lp_name
 		#Remove any line-items that don't have corresponding labor-pools.
 		for lp in self.list:
 			cult_lps = cult.departments.values()
 			if lp not in cult_lps:
-				self.sizer.Remove(self.list[lp])
+				self.sizer.Remove(self.list[lp].getLeftElement())
+				self.sizer.Remove(self.list[lp].getRightElement())
 				print "-", self.list[lp].name
 				del(self.list[lp])
 		self.sizer.Layout()
