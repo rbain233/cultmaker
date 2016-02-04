@@ -55,6 +55,12 @@ class LaborPool(CrudeObservable): #Standard labor pool, with no 'use'.
 	
 	def calculateMonthlyExpenses(self):  #TODO: Have this get called by the financial stuff.
 		return self.cost_per_person * len(self.people)
+		
+	def getLoss(self):
+		return -self.calculateMonthlyExpenses()
+		
+	def getGain(self):
+		return 10 #for now - this is a dummy value.
 	
 	def disband(self):
 		for person in self.people:

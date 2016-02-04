@@ -215,7 +215,99 @@ class PropertyPanel(wx.Panel):
 		#Buying or selling a building should take effect next month?
 		#If you buy a property, 'clone' it so you can buy more than one?
 		pass
+
+#line items can be for:
+#Lump sums of money
+#labor pool costs/returns (both?)
+#Property costs(/returns?)
+#Ok, should this handle both profit and loss, or just one? For now, do both.
+class FinanceLineItem(wx.Panel):
+	def __init__(self, parent, watchee = None, name="", gain=0, loss=0):
+		wx.Panel.__init__(self, parent)
 		
+		sizer = wx.BoxSizer(wx.HORIZONTAL)
+		self.name_field = wx.StaticText(self)
+		sizer.Add(self.name_field, 1, wx.ALIGN_LEFT)
+		sizer2 = wx.BoxSizer(wx.VERTICAL)
+		self.gain_field = wx.StaticText(self)
+		self.loss_field = wx.StaticText(self)
+		sizer2.Add(self.gain_field, 1, wx.ALIGN_RIGHT)
+		sizer2.Add(self.loss_field, 1, wx.ALIGN_RIGHT)
+		sizer.Add(sizer2)
+		self.SetSizer(sizer)
+		
+		if watchee:
+			#Get name and (current) amount from watchee, 
+			self.watchee = watchee
+			watchee.addCallback(self.update)
+			self.update(watchee)
+		else:
+			#Use name and amount(s).
+			self.watchee = None
+			self.name = name
+			self.gain = gain 
+			self.loss = loss
+			print self.name, self.gain, self.loss
+			self.setFields()
+		
+	def setFields(self):
+		self.name_field.SetLabel(self.name)
+		self.gain_field.SetLabel(str(self.gain))
+		self.gain_field.Show(self.gain != 0)
+		self.loss_field.SetLabel(str(self.loss))
+		self.loss_field.Show(self.loss != 0)
+		
+	def update(self, watchee):
+		self.name = watchee.name
+		self.gain = watchee.getGain()  #Hm... this will always be 'projected' gain?
+		self.loss = watchee.getLoss()
+		self.setFields()
+		
+#This one needs to be updated in real time with changes from assigning/removing minions & buying/selling stuff.
+class PresentFinancePanel(wx.Panel):
+	def __init__(self, parent, game):
+		wx.Panel.__init__(self, parent)
+		#When first created, this needs to create 'displayers' for all the labor pools?
+		self.game = game
+		self.cult = game.cult
+		self.list = {}
+		#Or are we just summing them up?
+		self.sizer = wx.BoxSizer(wx.VERTICAL)
+		self.SetSizer(self.sizer)
+		
+		#TODO: Add 'start of month' and 'end of month' totals.
+		self.start_total_line = FinanceLineItem(self, name = "Cult treasury, start of month:", gain = self.cult.funds)
+		print "funding ", self.cult.funds
+		self.sizer.Add(self.start_total_line)
+		self.end_total_line = FinanceLineItem(self, name = "Projected end-of-month total:", gain = 999)
+		self.sizer.Add(self.end_total_line)
+		self.update(self.cult)
+	
+	def update(self, cult):
+		#add any labor-pools that aren't on the list.
+		for lp_name in cult.departments:
+			lp = cult.departments[lp_name]
+			if lp not in self.list:
+				self.list[lp] = FinanceLineItem(self, watchee = lp)
+				ii = self.sizer.GetItemCount()
+				self.sizer.Insert(ii - 1, self.list[lp], 1, wx.EXPAND)
+				print ii, lp_name
+		#Remove any line-items that don't have corresponding labor-pools.
+		for lp in self.list:
+			cult_lps = cult.departments.values()
+			if lp not in cult_lps:
+				self.sizer.Remove(self.list[lp])
+				print "-", self.list[lp].name
+				del(self.list[lp])
+		self.sizer.Layout()
+		#add up all totals, and make that the 
+		
+		
+#This one is static - same layout, but it's getting info from a file or text?
+class PastFinancePanel(wx.Panel):
+	def __init__(self, parent, game):
+		wx.Panel.__init__(self, parent)
+
 class FinancePanel(wx.Panel):
 	def __init__(self, parent, game):
 		wx.Panel.__init__(self, parent)
@@ -241,11 +333,8 @@ class FinancePanel(wx.Panel):
 		#No it doesn't, it just needs to render the page correctly.
 		#self.present_panel = wx.html.HtmlWindow(self) #This isn't showing up....
 		#self.present_panel.SetPage("<i>HTML PANEL</i>")
-		self.present_panel = wx.Panel(self)
-		self.present_panel_sizer = wx.BoxSizer(wx.VERTICAL)
-		self.present_panel_sizer.Add(wx.StaticText(self.present_panel, label="This month"))
-		self.present_panel.SetSizer(self.present_panel_sizer)
-		self.sizer.Add(self.present_panel)
+		self.present_panel = PresentFinancePanel(self, self.game)
+		self.sizer.Add(self.present_panel, 1, wx.EXPAND) #EXPAND here is a bit too much, but without it, it's got no room to grow at all.
 		
 		self.past_panel = wx.Panel(self)
 		self.past_panel_sizer = wx.BoxSizer(wx.VERTICAL)
