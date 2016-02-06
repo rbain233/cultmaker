@@ -225,6 +225,7 @@ class FinanceLineItem:
 	def __init__(self, parent, watchee = None, name="", gain=0, loss=0):
 		
 		#sizer = wx.BoxSizer(wx.HORIZONTAL)
+		self.parent = parent
 		self.name_field = wx.StaticText(parent)
 		#sizer.Add(self.name_field, 1, wx.ALIGN_LEFT)
 		self.right_sizer = wx.BoxSizer(wx.VERTICAL)
@@ -262,15 +263,35 @@ class FinanceLineItem:
 		self.loss_field.SetLabel(str(self.loss))
 		self.loss_field.Show(self.loss != 0)
 		self.right_sizer.Layout()
-		#BUG: This needs to resize itself when the values are updated.
-		#Find out how.
+		self.parent.sizer.Layout()
+		self.parent.updateTotal()
 		
 	def update(self, watchee):
 		self.name = watchee.name
 		self.gain = watchee.getGain()  #Hm... this will always be 'projected' gain?
 		self.loss = watchee.getLoss()
 		self.setFields()
+
+#This one is a bit less complex, as it only is there to passively get the sum up the results.
+class FinanceLineItemTotal(FinanceLineItem):
+	def __init__(self, parent, name=""):
+		FinanceLineItem.__init__(self, parent, None, name, 0, 0)
 		
+	def setFields(self):
+		self.name_field.SetLabel(self.name)
+		self.gain_field.SetLabel(str(self.gain))
+		self.gain_field.Show(self.gain != 0)
+		self.loss_field.SetLabel(str(self.loss))
+		self.loss_field.Show(self.loss != 0)
+		self.right_sizer.Layout()
+		self.parent.sizer.Layout()
+		#Does not call update, to avoid an infinite regress.
+	
+	def setTotal(self, amount):
+		self.gain = amount
+		self.loss = 0
+		self.setFields()
+	
 #This one needs to be updated in real time with changes from assigning/removing minions & buying/selling stuff.
 class PresentFinancePanel(wx.Panel):
 	def __init__(self, parent, game):
@@ -284,13 +305,12 @@ class PresentFinancePanel(wx.Panel):
 		self.sizer = wx.FlexGridSizer(0, 2, 9, 25)
 		self.SetSizer(self.sizer)
 		
-		#TODO: Add 'start of month' and 'end of month' totals.
+		self.end_total_line = FinanceLineItemTotal(self, name = "Projected end-of-month total:")
 		self.start_total_line = FinanceLineItem(self, name = "Cult treasury, start of month:", gain = self.cult.funds)
-		print "funding ", self.cult.funds
+		
 		self.sizer.Add(self.start_total_line.getLeftElement())
 		self.sizer.Add(self.start_total_line.getRightElement())
-		self.end_total_line = FinanceLineItem(self, name = "Projected end-of-month total:", gain = 999)
-		#self.sizer.Add(self.end_total_line)
+		
 		self.sizer.Add(self.end_total_line.getLeftElement())
 		self.sizer.Add(self.end_total_line.getRightElement())
 		
@@ -309,19 +329,27 @@ class PresentFinancePanel(wx.Panel):
 				self.sizer.Insert(ii - 1, item.getRightElement(), 1, wx.EXPAND)
 				#self.sizer.Add(self.end_total_line.getLeftElement())
 				#self.sizer.Add(self.end_total_line.getRightElement())
-				print ii, lp_name
 		#Remove any line-items that don't have corresponding labor-pools.
-		for lp in self.list:
+		for lp in self.list: 
 			cult_lps = cult.departments.values()
 			if lp not in cult_lps:
 				self.sizer.Remove(self.list[lp].getLeftElement())
 				self.sizer.Remove(self.list[lp].getRightElement())
-				print "-", self.list[lp].name
 				del(self.list[lp])
+		self.updateTotal()
 		self.sizer.Layout()
-		#add up all totals, and make that the 
-		
-		
+		#add up all totals, and make that the end-of-month total.
+	
+	def updateTotal(self):
+		total = 0
+		#I have to do these 'if's, or this will get called before the total_lines exist yet.
+		if "start_total_line" in dir(self):  
+			total = self.start_total_line.gain + self.start_total_line.loss
+		for lp in self.list:
+			total += self.list[lp].gain + self.list[lp].loss
+		if "end_total_line" in dir(self):
+			self.end_total_line.setTotal(total)
+	
 #This one is static - same layout, but it's getting info from a file or text?
 class PastFinancePanel(wx.Panel):
 	def __init__(self, parent, game):
