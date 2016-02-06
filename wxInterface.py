@@ -354,6 +354,44 @@ class PresentFinancePanel(wx.Panel):
 class PastFinancePanel(wx.Panel):
 	def __init__(self, parent, game):
 		wx.Panel.__init__(self, parent)
+		self.game = game
+		self.sizer = wx.FlexGridSizer(0, 2, 9, 25)
+		self.SetSizer(self.sizer)
+	
+	#date: yyyy-mm-01 date to search for.
+	#archive: BIG string containing previous months' finances.
+	def loadMonth(self, date_str, archive):
+		self.sizer.Clear()
+		index = archive.find(date_str)
+		if index > -1:
+			#find the end.
+			index2 = archive.find("--END MONTH---") #need to make sure users can't name a LP that to screw up things.
+			if index2 > -1:
+				month_str = archive[index:index2]
+			else:
+				month_str = archive[index:]
+		else:
+			month_str = "No financial records for that month."
+		month_line_array = month_str.splitlines() #split by \n.
+		line_count = 0
+		for line in month_line_array:
+			line_count +=1
+			print line
+			if line_count == 1:
+				continue #Skip the first line, it's the month.
+			(name, gain, loss) = line.split(",") #Name, gain, loss.
+			name_field = wx.StaticText(self, label = name)
+			self.sizer.Add(name_field)
+			
+			right_sizer = wx.BoxSizer(wx.VERTICAL)
+			if int(gain) > 0:
+				gain_field = wx.StaticText(self, label = gain)
+				right_sizer.Add(gain_field, 1, wx.ALIGN_RIGHT)
+			if int(loss) < 0:
+				loss_field = wx.StaticText(self, label = loss)
+				right_sizer.Add(loss_field, 1, wx.ALIGN_RIGHT)
+			self.sizer.Add(right_sizer)
+		self.sizer.Layout()
 
 class FinancePanel(wx.Panel):
 	def __init__(self, parent, game):
@@ -383,11 +421,11 @@ class FinancePanel(wx.Panel):
 		self.present_panel = PresentFinancePanel(self, self.game)
 		self.sizer.Add(self.present_panel, 1, wx.EXPAND) #EXPAND here is a bit too much, but without it, it's got no room to grow at all.
 		
-		self.past_panel = wx.Panel(self)
-		self.past_panel_sizer = wx.BoxSizer(wx.VERTICAL)
-		self.past_panel_sizer.Add(wx.StaticText(self.past_panel, label="Past month"))
-		self.past_panel.SetSizer(self.past_panel_sizer)
+		self.past_panel = PastFinancePanel(self, self.game)
 		self.sizer.Add(self.past_panel)
+		
+		archive = "1998-07-01\nSnacks,0,-1111\nFrop Sales,5555,-71\n--END MONTH---"
+		self.past_panel.loadMonth("1998-07-01", archive)
 		
 		self.SetSizer(self.sizer)
 		self.sizer.Layout()
