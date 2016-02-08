@@ -26,9 +26,11 @@ class GameObject(CrudeObservable):
 		#Do functions in here - cult activities, enemies, govenment, media, random stuff....
 		#And advance to next month.
 		
-		next_month = self.date + timedelta(days=32)
-		next_month.replace(day=1)
-		self.date = next_month
+		next_month = self.date.month + 1
+		if next_month == 13: #Next year.
+			self.date = date(self.date.year + 1, 1, 1)
+		else:
+			self.date = date(self.date.year, next_month, 1)
 		self._docallbacks()
 
 class ExamplePanel(wx.Panel):
@@ -400,12 +402,18 @@ class FinancePanel(wx.Panel):
 		self.game.cult.addCallback(self.cultUpdate)
 		self.sizer = wx.BoxSizer(wx.VERTICAL or wx.ALIGN_CENTER)
 		self.header = wx.BoxSizer(wx.HORIZONTAL or wx.ALIGN_CENTER)
-		self.header.Add(wx.StaticText(self, label="Select month: "))
+		select_sizer = wx.BoxSizer(wx.HORIZONTAL)
+		select_sizer.Add(wx.StaticText(self, label="Select month: "))
 		self.date_selector = SetupPage.InlineCalendar(self, show_day=False)
-		self.header.Add(self.date_selector)
+		select_sizer.Add(self.date_selector)
 		self.btn_load_month = wx.Button(self, label="View", style=wx.BU_EXACTFIT)
-		self.header.Add(self.btn_load_month)
+		select_sizer.Add(self.btn_load_month)
+		self.header.Add(select_sizer)
 		#The button needs to be bound.
+		self.game.addCallback(self.gameMonthlyUpdate)
+		
+		self.btn_last_month = wx.Button(self, label="Last Month: ", style=wx.BU_EXACTFIT)
+		self.header.Add(self.btn_last_month)
 		
 		self.btn_this_month = wx.Button(self, label="Now: " + game.date.strftime("%B %Y"), style=wx.BU_EXACTFIT)
 		self.header.Add(self.btn_this_month)
@@ -422,14 +430,14 @@ class FinancePanel(wx.Panel):
 		self.sizer.Add(self.present_panel, 1, wx.EXPAND) #EXPAND here is a bit too much, but without it, it's got no room to grow at all.
 		
 		self.past_panel = PastFinancePanel(self, self.game)
-		self.sizer.Add(self.past_panel)
+		self.sizer.Add(self.past_panel, 1, wx.EXPAND)
 		
 		archive = "1998-07-01\nSnacks,0,-1111\nFrop Sales,5555,-71\n--END MONTH---"
 		self.past_panel.loadMonth("1998-07-01", archive)
 		
 		self.SetSizer(self.sizer)
 		self.sizer.Layout()
-		
+		self.gameMonthlyUpdate(self.game)
 		#looks like you can't put a notebook inside another notebook, though?
 		#So, a radio button or a dropdown?
 		#Finance panel.
@@ -447,11 +455,20 @@ class FinancePanel(wx.Panel):
 		#Otherwise, disconnect it?
 		#Or have it look at last month?
 		pass
+	
+	def gameMonthLabelsUpdate(self):
+		self.btn_last_month.SetLabel("Last Month: " + self.last_month_date.strftime("%B %Y"))
+		self.btn_this_month.SetLabel("Projected: " + self.this_month_date.strftime("%B %Y"))
 		
-	def monthUpdate(self, new_month):
+	
+	def gameMonthlyUpdate(self, game):
+		self.this_month_date = game.date
+		self.last_month_date = game.date - timedelta(days=1)
+		self.last_month_date = self.last_month_date.replace(day=1)
 		#snapshot the current month's financial data, save it to disk.
 		#advance to the new month.
 		#Calculate the month's expenses.
+		self.gameMonthLabelsUpdate()
 		pass
 	
 	#Previous Months:
@@ -579,7 +596,8 @@ class MainWindow(wx.Frame):
 		self.game.leader.rank= person.Person.RANK_LEADER
 		self.game.cult.leader = self.game.leader
 		self.game.cult.membership.append(self.game.leader)
-		self.game.date = date.today()
+		self.game.date = date.today() + timedelta(days=32) 
+		self.game.date = self.game.date.replace(day=1)
 		for ii in range(25):
 			self.game.cult.membership.append(person.Person())
 		for ii in range(25):
