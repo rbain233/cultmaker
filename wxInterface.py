@@ -17,6 +17,8 @@ class GameObject(CrudeObservable):
 		self.cult = None
 		self.leader = None
 		self.date = None
+		self.event_log = ""  #Just save a string?
+		self.financial_log = {date(1998,4,1): (("starting funds", 999, 0), ("people buying crap", 1, 0),("End of month total", 1000,0))} #Date: (tuple of (name, gain, loss))? Should work....
 		
 	def test(self):
 		print "testing..."
@@ -362,37 +364,27 @@ class PastFinancePanel(wx.Panel):
 	
 	#date: yyyy-mm-01 date to search for.
 	#archive: BIG string containing previous months' finances.
-	def loadMonth(self, date_str, archive):
+	def loadMonth(self, date):
 		self.sizer.Clear()
-		index = archive.find(date_str)
-		if index > -1:
-			#find the end.
-			index2 = archive.find("--END MONTH---") #need to make sure users can't name a LP that to screw up things.
-			if index2 > -1:
-				month_str = archive[index:index2]
-			else:
-				month_str = archive[index:]
+		if date in self.game.financial_log:
+			month_financial_log = self.game.financial_log[date]
+			for entry in month_financial_log:
+				(name, gain, loss) = entry
+				name_field = wx.StaticText(self, label = name)
+				self.sizer.Add(name_field)
+				
+				right_sizer = wx.BoxSizer(wx.VERTICAL)
+				if int(gain) > 0:
+					gain_field = wx.StaticText(self, label = str(gain))
+					right_sizer.Add(gain_field, 1, wx.ALIGN_RIGHT)
+				if int(loss) < 0:
+					loss_field = wx.StaticText(self, label = str(loss))
+					right_sizer.Add(loss_field, 1, wx.ALIGN_RIGHT)
+				self.sizer.Add(right_sizer, 1, wx.ALIGN_RIGHT)
 		else:
-			month_str = "No financial records for that month."
-		month_line_array = month_str.splitlines() #split by \n.
-		line_count = 0
-		for line in month_line_array:
-			line_count +=1
-			print line
-			if line_count == 1:
-				continue #Skip the first line, it's the month.
-			(name, gain, loss) = line.split(",") #Name, gain, loss.
-			name_field = wx.StaticText(self, label = name)
-			self.sizer.Add(name_field)
+			#No entries for this month.
+			self.sizer.Add(wx.StaticText(self, label = "No financial log for this month."))
 			
-			right_sizer = wx.BoxSizer(wx.VERTICAL)
-			if int(gain) > 0:
-				gain_field = wx.StaticText(self, label = gain)
-				right_sizer.Add(gain_field, 1, wx.ALIGN_RIGHT)
-			if int(loss) < 0:
-				loss_field = wx.StaticText(self, label = loss)
-				right_sizer.Add(loss_field, 1, wx.ALIGN_RIGHT)
-			self.sizer.Add(right_sizer)
 		self.sizer.Layout()
 
 class FinancePanel(wx.Panel):
@@ -412,10 +404,10 @@ class FinancePanel(wx.Panel):
 		#The button needs to be bound.
 		self.game.addCallback(self.gameMonthlyUpdate)
 		
-		self.btn_last_month = wx.Button(self, label="Last Month: ", style=wx.BU_EXACTFIT)
+		self.btn_last_month = wx.Button(self, style=wx.BU_EXACTFIT)
 		self.header.Add(self.btn_last_month)
 		
-		self.btn_this_month = wx.Button(self, label="Now: " + game.date.strftime("%B %Y"), style=wx.BU_EXACTFIT)
+		self.btn_this_month = wx.Button(self, style=wx.BU_EXACTFIT)
 		self.header.Add(self.btn_this_month)
 		#The button needs to be bound.
 		
@@ -432,8 +424,7 @@ class FinancePanel(wx.Panel):
 		self.past_panel = PastFinancePanel(self, self.game)
 		self.sizer.Add(self.past_panel, 1, wx.EXPAND)
 		
-		archive = "1998-07-01\nSnacks,0,-1111\nFrop Sales,5555,-71\n--END MONTH---"
-		self.past_panel.loadMonth("1998-07-01", archive)
+		self.past_panel.loadMonth(date(1998,4,1))
 		
 		self.SetSizer(self.sizer)
 		self.sizer.Layout()
@@ -446,6 +437,7 @@ class FinancePanel(wx.Panel):
 		#(oooh, Fanaticism can skew them higher!)
 		#TODO: Ability to check past months?
 		#Total treasury
+		
 		
 	def cultUpdate(self, cult):
 		#Update when a new month starts? No, different callback for that.
