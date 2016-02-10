@@ -273,7 +273,7 @@ class FinanceLineItem:
 	def update(self, watchee):
 		self.name = watchee.name
 		self.gain = watchee.guessGain()  #Hm... this will always be 'projected' gain?
-		self.loss = watchee.getLoss()
+		self.loss = watchee.guessLoss()
 		self.setFields()
 
 #This one is a bit less complex, as it only is there to passively get the sum up the results.

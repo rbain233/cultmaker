@@ -60,6 +60,11 @@ class LaborPool(CrudeObservable): #Standard labor pool, with no 'use'.
 	def getLoss(self):
 		return -self.calculateMonthlyExpenses()
 	
+	#Return the estimated cost of this labor pool for this month.
+	#Simplified for now...
+	def guessLoss(self):
+		return -self.calculateMonthlyExpenses()
+		
 	#Returns the estimated money gain from this labor pool, with the current conditions.
 	#Should be modified by the fanaticism, etc.
 	#needs to be cached so it doesn't change every time it's called.
