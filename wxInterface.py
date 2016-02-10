@@ -272,7 +272,7 @@ class FinanceLineItem:
 		
 	def update(self, watchee):
 		self.name = watchee.name
-		self.gain = watchee.getGain()  #Hm... this will always be 'projected' gain?
+		self.gain = watchee.guessGain()  #Hm... this will always be 'projected' gain?
 		self.loss = watchee.getLoss()
 		self.setFields()
 
@@ -362,8 +362,6 @@ class PastFinancePanel(wx.Panel):
 		self.sizer = wx.FlexGridSizer(0, 2, 9, 25)
 		self.SetSizer(self.sizer)
 	
-	#date: yyyy-mm-01 date to search for.
-	#archive: BIG string containing previous months' finances.
 	def loadMonth(self, date):
 		self.sizer.Clear()
 		if date in self.game.financial_log:

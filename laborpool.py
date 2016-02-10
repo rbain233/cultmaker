@@ -14,6 +14,7 @@ class LaborPool(CrudeObservable): #Standard labor pool, with no 'use'.
 		self.max_people = -1 #If it's non-negative, it's the actual max.
 		self.minimum_rank = min_rank
 		self.cost_per_person = cost_per_person
+		self.estimated_gain = 9
 	
 	#Rank is the rank we're ASKING for.
 	def rankOK(self, rank):
@@ -58,7 +59,14 @@ class LaborPool(CrudeObservable): #Standard labor pool, with no 'use'.
 		
 	def getLoss(self):
 		return -self.calculateMonthlyExpenses()
-		
+	
+	#Returns the estimated money gain from this labor pool, with the current conditions.
+	#Should be modified by the fanaticism, etc.
+	#needs to be cached so it doesn't change every time it's called.
+	def guessGain(self):
+		return self.estimated_gain
+	
+	#Returns any actual money gain from this labor pool at the end of the month.
 	def getGain(self):
 		return 10 #for now - this is a dummy value.
 	
