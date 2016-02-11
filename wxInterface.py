@@ -24,11 +24,7 @@ class GameObject(CrudeObservable):
 		#Do all the things necessary to move the game ahead one month.
 		#Do functions in here - cult activities, enemies, govenment, media, random stuff....
 		#And advance to next month.
-		self.event_log += self.cult.doJobs()
-		self.event_log += self.cult.membershipMonthlyChecks()
-		#Also: buy stuff.
-		
-		self.event_log +=  self.cult.finances(self.date)
+		self.event_log += self.cult.doMonth(self.date)
 		
 		next_month = self.date.month + 1
 		if next_month == 13: #Next year.
@@ -37,8 +33,7 @@ class GameObject(CrudeObservable):
 			self.date = date(self.date.year, next_month, 1)
 		
 		self.event_log += self.date.strftime("%B %Y") + "\n"
-		#This doesn't seem to be working yet for anything except updating the date in the header....
-		print self.event_log
+		
 		self._docallbacks() #This takes care of updating the frame header.
 
 class ExamplePanel(wx.Panel):
@@ -284,7 +279,7 @@ class FinanceLineItem:
 		self.name_field.SetLabel(self.name)
 		self.gain_field.SetLabel(str(self.gain))
 		self.gain_field.Show(self.gain != 0)
-		self.loss_field.SetLabel(str(self.loss))
+		self.loss_field.SetLabel(str(-self.loss))
 		self.loss_field.Show(self.loss != 0)
 		self.right_sizer.Layout()
 		self.parent.sizer.Layout()
@@ -612,6 +607,8 @@ class MainWindow(wx.Frame):
 		for ii in range(25):
 			p = person.Person()
 			p.rank = person.Person.RANK_OUTER_CIRCLE
+			p.morale = 75
+			p.fanaticism = 40
 			self.game.cult.membership.append(p)
 		self.GameStartedPages()
 

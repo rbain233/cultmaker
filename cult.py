@@ -159,8 +159,10 @@ class Cult(CrudeObservable):
 		self.short_name = "cult"
 		self.members_name = "cult"
 		self.founding_date = None
+		self.date = None
 		self.membership = []
 		self.ex_members = []
+		self.enemies = []
 		self.departments = {}
 		self.addLaborPool(labor_pool_street_preaching) 
 		self.addLaborPool(LaborPool("meditation","Transcendental Medication", "Sitting around doing nothing."))
@@ -178,12 +180,35 @@ class Cult(CrudeObservable):
 		self.recruit_base_morale_max = 80 #need ways to avoid this...
 		self.dogma = 10
 		self.supplies = {} #Pamphlets, books and so on.
-		self.last_month_membership_count = 0
 		self.last_month_fame = 0
 		self.last_month_popularity = 0
 		self.last_month_funds = 0
 		self.last_month_morale = 0
 		self.financial_log = {datetime.date(1998,4,1): (("starting funds", 999, 0), ("people buying crap", 1, 0),("End of month total", 1000,0))} #Date: (tuple of (name, gain, loss))? Should work....
+		self.last_month_membership_count = 1
+	
+	def doMonth(self, date):
+		self.date = date
+		self.last_month_fame = self.fame
+		self.last_month_popularity = self.popularity
+		self.last_month_funds = self.funds
+		self.last_month_membership_count = len(self.membership)
+		self.last_month_morale = self.calculateAverageMorale() #(deliberately inaccurate)
+		
+		msg = ""
+		msg += self.doJobs()
+		msg += self.loyaltyChecks()
+		msg += self.promoteOuterCheck()
+		msg += self.promoteRecruitsCheck()
+		msg += self.internalSocialStuff()
+		msg += self.fundRaising()
+		
+		msg +=  self.finances()
+		self._docallbacks()
+		for pool_name in self.departments:
+			self.departments[pool_name]._docallbacks() #Update them all.
+			
+		return msg
 	
 	def proselytize(self, recruit_percent, audience, fanaticism_bonus):
 		#I looked up the spelling.
@@ -236,39 +261,13 @@ class Cult(CrudeObservable):
 		status += "The %s is %s" \
 				  % (self.name, self.getFameTitle())
 		if (self.fame > 10):
-			status += " and is %s by those who know of it.\n" % cult.getPopularityTitle()
+			status += " and is %s by those who know of it.\n" % self.getPopularityTitle()
 		else:
 			status +=".\n"
 		return status
 	
-	def membershipMonthlyChecks(self):
-		#update these for next month, BEFORE any changes.
-		self.last_month_fame = self.fame
-		self.last_month_popularity = self.popularity
-		self.last_month_funds = self.funds
-		self.last_month_membership_count = len(self.membership)
-		self.last_month_morale = self.calculateAverageMorale() #(deliberately inaccurate)
-
-		msg = ""
-		msg += self.loyaltyChecks()
-		msg += self.promoteOuterCheck()
-		msg += self.promoteRecruitsCheck()
-		msg += self.internalSocialStuff()
-		msg += self.fundRaising()
-		msg += "cult membership:\n"
-		m = self.getRecruits()
-		if m:
-			msg += "%d recruits.\n" % len(m)
-		m = self.getOuterCircle()
-		if m:
-			msg += "%d Outer Circle members.\n" % len(m)
-		m = self.getInnerCircle()
-		if m:
-			msg += "%d Inner Circle members.\n" % len(m)
-		msg += "1 leader, %s." % self.leader.name
-		return msg
 	
-	def finances(self, date):
+	def finances(self):
 		temp_log = []
 		#TODO: Log all costs and gains per pool, expenditure, etc for the month.
 		msg = "Financial report:\n"
@@ -287,7 +286,7 @@ class Cult(CrudeObservable):
 		if self.funds < 0:
 			msg += "The cult needs money!\n"
 		temp_log.append(("Projected end-of-month total:", self.funds, 0))
-		self.financial_log[date] = temp_log
+		self.financial_log[self.date] = temp_log
 		return msg
 		
 	def loyaltyChecks(self):
@@ -345,7 +344,7 @@ class Cult(CrudeObservable):
 				cultist.rank = Person.RANK_OUTER_CIRCLE
 				promotion_count += 1
 				if cultist.department:
-					self.removeLabor(cultist.department, [cultist])
+					self.removeLabor(cultist.department.name, [cultist])
 		if promotion_count == 1:
 			return "1 recruit has advanced to the Outer Circle!\n"
 		if promotion_count > 1:
@@ -360,7 +359,7 @@ class Cult(CrudeObservable):
 				cultist.rank = Person.RANK_INNER_CIRCLE
 				promotion_count += 1
 				if cultist.department:
-					self.removeLabor(cultist.department, [cultist])
+					self.removeLabor(cultist.department.name, [cultist])
 		if promotion_count == 1:
 			return "1 Outer Circle member has advanced to the Inner Circle!\n"
 		if promotion_count > 1:
@@ -473,6 +472,7 @@ class Cult(CrudeObservable):
 					labor.append(cultist)
 		return labor
 					
+	#This uses the department NAME.
 	def assignLabor(self, department, cultists):
 		#TODO: add permanency, monthly function?
 		if department in self.departments: 
@@ -488,16 +488,16 @@ class Cult(CrudeObservable):
 				d.addPerson(c)
 			self._docallbacks()
 		else:
-			print "Error: Effort to assign people to unknown labor pool", department
+			print "Error: Effort to assign people to unknown labor pool", department.name
 
 	def removeLabor(self, department, cultists):
-		if self.departments.has_key(department):
+		if department in self.departments:
 			d = self.departments[department]
 			for c in cultists:
 				d.removePerson(c)
 			self._docallbacks()
 		else:
-			print "Error: Effort to remove people from unknown labor pool", department
+			print "Error: Effort to remove people from unknown labor pool", department.name
 
 	def disbandLabor(self, department):
 		if self.departments.has_key(department):
