@@ -18,22 +18,28 @@ class GameObject(CrudeObservable):
 		self.leader = None
 		self.date = None
 		self.event_log = ""  #Just save a string?
-		self.financial_log = {date(1998,4,1): (("starting funds", 999, 0), ("people buying crap", 1, 0),("End of month total", 1000,0))} #Date: (tuple of (name, gain, loss))? Should work....
 		
-	def test(self):
-		print "testing..."
 		
 	def advanceMonth(self):
 		#Do all the things necessary to move the game ahead one month.
 		#Do functions in here - cult activities, enemies, govenment, media, random stuff....
 		#And advance to next month.
+		self.event_log += self.cult.doJobs()
+		self.event_log += self.cult.membershipMonthlyChecks()
+		#Also: buy stuff.
+		
+		self.event_log +=  self.cult.finances(self.date)
 		
 		next_month = self.date.month + 1
 		if next_month == 13: #Next year.
 			self.date = date(self.date.year + 1, 1, 1)
 		else:
 			self.date = date(self.date.year, next_month, 1)
-		self._docallbacks()
+		
+		self.event_log += self.date.strftime("%B %Y") + "\n"
+		#This doesn't seem to be working yet for anything except updating the date in the header....
+		print self.event_log
+		self._docallbacks() #This takes care of updating the frame header.
 
 class ExamplePanel(wx.Panel):
 	def __init__(self, parent, name):
@@ -78,6 +84,9 @@ class MainCultPanel(wx.Panel):
 		self.cult = game.cult
 		cult = game.cult
 		
+		cult.addCallback(self.update)
+		self.game.addCallback(self.gameUpdate)
+		
 		self.last_month_funds = 0
 		self.last_month_membership = 0
 		self.last_month_morale = 0
@@ -117,10 +126,13 @@ class MainCultPanel(wx.Panel):
 		sides_sizer.Add(right_side_sizer)
 		self.sizer.Add(sides_sizer)
 		self.SetSizer(self.sizer)
-		self.update()
+		self.next_month_button = wx.Button(self, label="Next Month >>")
+		self.sizer.Add(self.next_month_button,1,wx.ALIGN_RIGHT)
+		self.next_month_button.Bind(wx.EVT_BUTTON, self.advanceMonth)
+		self.update(self.cult)
 	
 	#Gets called at the start of the month, never any other time?
-	def update(self):
+	def update(self, cult):
 		self.cult_name_field.SetLabel(self.cult.name)
 		#Cult fame and reputation
 		popularity_string = "Your cult is " + self.cult.getFameTitle()
@@ -184,10 +196,18 @@ class MainCultPanel(wx.Panel):
 		
 		#TODO: Take out raw value, it's for debugging.
 		self.cult_mood_field.SetLabel("Cult morale: " + mood_str + " (" + str(morale) + ") " + adj_string)
+		
+	
+	def gameUpdate(self, game):
 		#Cult activities log
-		for ii in range(1, 20):
-			self.log_text_field.WriteText("%d: Activities log (Under construction)\n" % ii) 
-			
+		self.log_text_field.Clear()
+		self.log_text_field.WriteText(self.game.event_log) 
+		
+	def advanceMonth(self, evt):
+		#TODO: Add some logic to prompt user if they have a lot of unallocated meeples or similar.
+		print "Next month!"
+		self.game.advanceMonth()
+	
 class PropertyPanel(wx.Panel):
 	def __init__(self, parent, game):
 		wx.Panel.__init__(self, parent)
@@ -364,8 +384,8 @@ class PastFinancePanel(wx.Panel):
 	
 	def loadMonth(self, date):
 		self.sizer.Clear()
-		if date in self.game.financial_log:
-			month_financial_log = self.game.financial_log[date]
+		if date in self.game.cult.financial_log:
+			month_financial_log = self.game.cult.financial_log[date]
 			for entry in month_financial_log:
 				(name, gain, loss) = entry
 				name_field = wx.StaticText(self, label = name)
@@ -483,7 +503,6 @@ class MainWindow(wx.Frame):
 		
 		self.game = game_obj
 		self.game.addCallback(self.game_update)
-		#self.game.test()
 		
 		# Setting up the menu.
 		filemenu= wx.Menu()
@@ -621,7 +640,8 @@ class MainWindow(wx.Frame):
 			self.nb.AddPage(panel_beliefs, "Beliefs")
 			panel_enemies = ExamplePanel(nb, "Enemies")
 			self.nb.AddPage(panel_enemies, "Enemies")
-			self.game.advanceMonth() #Start 1st of next month.
+			#self.game.advanceMonth() #Start 1st of next month. #NOT YET.
+			self.game.date.replace(day=1)
 			self.game_update(self.game)
 		else:
 			#Something went wrong, the cult's not initialized.

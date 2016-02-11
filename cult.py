@@ -5,6 +5,7 @@ from misc import *
 import math
 from merch import *
 from mvc import *
+import datetime
 
 class Doctrine:
 	def __init__(self, name, popularity_mod = 0):
@@ -182,7 +183,7 @@ class Cult(CrudeObservable):
 		self.last_month_popularity = 0
 		self.last_month_funds = 0
 		self.last_month_morale = 0
-		
+		self.financial_log = {datetime.date(1998,4,1): (("starting funds", 999, 0), ("people buying crap", 1, 0),("End of month total", 1000,0))} #Date: (tuple of (name, gain, loss))? Should work....
 	
 	def proselytize(self, recruit_percent, audience, fanaticism_bonus):
 		#I looked up the spelling.
@@ -267,19 +268,26 @@ class Cult(CrudeObservable):
 		msg += "1 leader, %s." % self.leader.name
 		return msg
 	
-	def finances(self):
+	def finances(self, date):
+		temp_log = []
+		#TODO: Log all costs and gains per pool, expenditure, etc for the month.
 		msg = "Financial report:\n"
+		temp_log.append(("Cult treasury, start of month:", self.funds, 0))
 		if self.funds < 0:
 			msg += "The cult's debts are mounting!\n"
 			self.funds = int(self.funds * 1.05) # 5% interest should be extortionate enough....
 		#TODO: Get more financial info each month, archive it.
 		for pool_name in self.departments:
-			c = self.departments[pool_name].calculateMonthlyExpenses()
+			c = self.departments[pool_name].getLoss()
+			d = self.departments[pool_name].getGain()
+			temp_log.append((self.departments[pool_name].name, d, c))
 			msg += "%s:\t%d\n" % (self.departments[pool_name].name, c)
 			self.funds -= c
 		msg += "cult treasury: %d.\n" % self.funds
 		if self.funds < 0:
 			msg += "The cult needs money!\n"
+		temp_log.append(("Projected end-of-month total:", self.funds, 0))
+		self.financial_log[date] = temp_log
 		return msg
 		
 	def loyaltyChecks(self):
@@ -302,9 +310,9 @@ class Cult(CrudeObservable):
 				#Check to see if quitter because an enemy
 				#Now all the things that kept them in go against them...
 				if percentCheck(cultist.sunk_cost):
-					cultist.morale -= random.randint(1,cultist.sunk_cost)
+					cultist.morale -= random.randint(0,min(cultist.sunk_cost,1))
 				if percentCheck(cultist.fanaticism):
-					cultist.morale -= random.randint(1,cultist.fanaticism)
+					cultist.morale -= random.randint(0,min(cultist.fanaticism,1))
 				#TODO: If they know any dirt, that can also make them worse.
 				if (cultist.morale < 0):
 					cultist.rank = Person.RANK_ENEMY
@@ -337,7 +345,7 @@ class Cult(CrudeObservable):
 				cultist.rank = Person.RANK_OUTER_CIRCLE
 				promotion_count += 1
 				if cultist.department:
-					self.removeLabor(self, cultist.department, [cultist])
+					self.removeLabor(cultist.department, [cultist])
 		if promotion_count == 1:
 			return "1 recruit has advanced to the Outer Circle!\n"
 		if promotion_count > 1:
@@ -352,7 +360,7 @@ class Cult(CrudeObservable):
 				cultist.rank = Person.RANK_INNER_CIRCLE
 				promotion_count += 1
 				if cultist.department:
-					self.removeLabor(self, cultist.department, [cultist])
+					self.removeLabor(cultist.department, [cultist])
 		if promotion_count == 1:
 			return "1 Outer Circle member has advanced to the Inner Circle!\n"
 		if promotion_count > 1:
