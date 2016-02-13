@@ -6,6 +6,7 @@ from datetime import date, timedelta
 import wxLaborPoolControls
 import cult
 import person
+import merch
 #include <wx/html/htmlwin.h>
 
 """Trying to use wxPython to set up a UI for this game."""
@@ -202,7 +203,29 @@ class MainCultPanel(wx.Panel):
 		#TODO: Add some logic to prompt user if they have a lot of unallocated meeples or similar.
 		print "Next month!"
 		self.game.advanceMonth()
-	
+
+class InventoryPanel(wx.Panel):
+	def __init__(self, parent, game):
+		wx.Panel.__init__(self, parent)
+		self.cult = game.cult
+		self.sizer = wx.BoxSizer(wx.VERTICAL)
+		self.SetSizer(self.sizer)
+		game.cult.addCallback(self.update)
+		self.update(self.cult)
+		
+	def update(self, cult):
+		self.sizer.Clear()
+		for item in cult.supplies:
+			#list item.
+			pass
+		for m in merch.merch_list:
+			if m.meetsPrereq(cult):
+				self.sizer.Add(wx.StaticText(self, label=m.name))
+				#This will need 'buy more/less' control.
+		self.sizer.Layout()
+		#Should keep a count of available money.
+		
+		
 class PropertyPanel(wx.Panel):
 	def __init__(self, parent, game):
 		wx.Panel.__init__(self, parent)
@@ -631,7 +654,7 @@ class MainWindow(wx.Frame):
 			self.nb.AddPage(panel_money, "Finance")
 			panel_property = PropertyPanel(nb, self.game)
 			self.nb.AddPage(panel_property, "Property")
-			panel_inventory = ExamplePanel(nb, "Inventory")
+			panel_inventory = InventoryPanel(nb, self.game)
 			self.nb.AddPage(panel_inventory, "Inventory")
 			panel_beliefs = ExamplePanel(nb, "Beliefs")
 			self.nb.AddPage(panel_beliefs, "Beliefs")

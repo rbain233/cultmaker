@@ -131,6 +131,7 @@ def writeScripture(self, cult):
 	if cult.dogma > 60:
 		msg += "a regular radio or TV program\n"
 		msg += "a series of books\n"
+	cult._docallbacks()
 	return msg
 	
 labor_pool_street_preaching = LaborPool("street_preaching", "Recruiting: Street Preaching", "Standing around in public hollering at the crowds.", streetPreaching, Person.RANK_OUTER_CIRCLE, 5)
