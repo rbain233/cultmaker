@@ -204,26 +204,102 @@ class MainCultPanel(wx.Panel):
 		print "Next month!"
 		self.game.advanceMonth()
 
+#One line, with name, mouseover desc, and a -/#/+ control
+class InventoryBuyControl(wx.Panel):
+	def __init__(self, parent, cult, merch):
+		wx.Panel.__init__(self, parent)
+		self.cult = cult
+		self.merch = merch
+		self.parent = parent
+		#self.SetToolTip(wx.ToolTip(self.merch.desc))
+		#self.SetHelpText("YYY" + self.merch.desc)
+		self.sizer = wx.BoxSizer(wx.VERTICAL)
+		top_sizer = wx.BoxSizer(wx.HORIZONTAL)
+		top_sizer.Add(wx.StaticText(self, label=self.merch.name))
+		top_sizer.Add((10,10))
+		self.inventory_field = wx.StaticText(self, label=str(cult.getSupplies(merch.internal_name)) + " in stock")
+		top_sizer.Add(self.inventory_field)
+		top_sizer.Add((10,10))
+		self.buy_field = wx.StaticText(self, label="buy 0")
+		self.buy_amount = 0
+		top_sizer.Add(self.buy_field)
+		top_sizer.Add((20,10))
+		top_sizer.Add(wx.StaticText(self, label="@ $" + str(self.merch.unit_cost) + " each"))
+		top_sizer.Add((10,10))
+		
+		self.btn_buy_more = wx.Button(self, label="+", style=wx.BU_EXACTFIT)
+		top_sizer.Add(self.btn_buy_more, 0, wx.CENTRE)
+		self.btn_buy_more.Bind(wx.EVT_BUTTON, self.buyMore)
+		self.btn_buy_less = wx.Button(self, label="-", style=wx.BU_EXACTFIT)
+		top_sizer.Add(self.btn_buy_less, 0, wx.CENTRE)
+		self.btn_buy_less.Bind(wx.EVT_BUTTON, self.buyLess)
+		self.checkbox_monthly = wx.CheckBox(self, label = 'Repeat purchase every month') 
+		top_sizer.Add((10,10))
+		top_sizer.Add(self.checkbox_monthly)
+		
+		self.sizer.Add(top_sizer)
+		desc = wx.StaticText(self, label=self.merch.desc)
+		desc.SetFont(wx.Font(8, wx.FONTFAMILY_SCRIPT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL ))
+		self.sizer.Add(desc)
+		self.SetSizer(self.sizer)
+	
+	def clearBuyField(self):
+		self.buy_amount = 0
+		self.buy_field.SetLabel("buy " + str(self.buy_amount))
+		#Update inventoryPanel
+		self.parent.btnUpdate()
+		
+	def setBuyField(self):
+		self.buy_field.SetLabel("buy " + str(self.buy_amount))
+		#Update inventoryPanel
+		self.parent.btnUpdate()
+		
+	def buyMore(self, evt):
+		self.buy_amount += 1
+		self.setBuyField()
+	
+	def buyLess(self, evt):
+		self.buy_amount -= 1
+		if self.buy_amount < 0:
+			self.buy_amount = 0
+		self.setBuyField()
+		
+	def setInventory(self, n):
+		self.inventory_field.SetLabel(str(n) + " in stock")
+	
 class InventoryPanel(wx.Panel):
 	def __init__(self, parent, game):
 		wx.Panel.__init__(self, parent)
 		self.cult = game.cult
 		self.sizer = wx.BoxSizer(wx.VERTICAL)
 		self.SetSizer(self.sizer)
-		game.cult.addCallback(self.update)
-		self.update(self.cult)
+		game.cult.addCallback(self.monthlyUpdate)
+		self.buy_controls = {}
+		self.monthlyUpdate(self.cult)
 		
-	def update(self, cult):
-		self.sizer.Clear()
-		for item in cult.supplies:
-			#list item.
-			pass
+		#TODO: Needs to sum these all up, show how much money will be left after purchase?
+		#Or just 'current funds' and 'spending' lines, and a line on the finance page.
+		
+	#This should only be updated when doing a new month - do we need this?
+	def monthlyUpdate(self, cult):
+		#self.sizer.Clear()
 		for m in merch.merch_list:
 			if m.meetsPrereq(cult):
-				self.sizer.Add(wx.StaticText(self, label=m.name))
-				#This will need 'buy more/less' control.
+				if m not in self.buy_controls:
+					ibc = InventoryBuyControl(self, self.cult, m)
+					self.buy_controls[m] = ibc
+					self.sizer.Add(ibc)
+		for item in cult.supplies:
+			#It shouldn't be possible to have an inventory of items you can't make...
+			self.buy_controls[m].setInventory(cult.getSupplies(item.internal_name))
+		for m in self.buy_controls:
+			if not self.buy_controls[m].checkbox_monthly.GetValue():
+				self.buy_controls[m].clearBuyField() #If it's not monthly, reset to 0 every month.
 		self.sizer.Layout()
 		#Should keep a count of available money.
+	
+	def btnUpdate(self):
+		pass
 		
 		
 class PropertyPanel(wx.Panel):
@@ -681,5 +757,6 @@ class CultApp(wx.App):
 		self.MainLoop()
 		
 if __name__ == "__main__":
+	#wx.ToolTip.Enable(True)  #Huh, adding this made it crash?
 	game = GameObject()
 	ca = CultApp(game)
