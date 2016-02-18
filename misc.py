@@ -45,3 +45,18 @@ class Dice:
 		for ii in range(1, self.dice):
 			total += random.randint(1, self.sides)
 		return total
+		
+def nudgeTowardsAverage(current_value, target, steps = 4):
+	if steps == 0: #This should probably cause an error message.
+		return current_value
+	diff = (current_value - target) / steps
+	if diff == 0:
+		return current_value
+	if diff > 0:
+		direction = -1
+	if diff < 0:
+		direction = 1
+	diff = abs(diff)
+	return current_value + (random.randint(0, diff) * direction)
+	
+	

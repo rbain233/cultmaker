@@ -173,6 +173,7 @@ class Cult(CrudeObservable):
 		self.addLaborPool(max)
 		self.addLaborPool(labor_pool_write_scripture)
 		self.fame = 0
+		self.max_fame = 0
 		self.popularity = 0
 		self.funds = 1000 #starting money
 		self.doctrines = [] #no starting doctrines?
@@ -190,6 +191,8 @@ class Cult(CrudeObservable):
 	
 	def doMonth(self, date):
 		self.date = date
+		if self.fame > self.max_fame:
+			self.max_fame = self.fame
 		self.last_month_fame = self.fame
 		self.last_month_popularity = self.popularity
 		self.last_month_funds = self.funds
@@ -198,6 +201,7 @@ class Cult(CrudeObservable):
 		
 		msg = ""
 		msg += self.doJobs()
+		msg += self.publicity()
 		msg += self.loyaltyChecks()
 		msg += self.promoteOuterCheck()
 		msg += self.promoteRecruitsCheck()
@@ -289,6 +293,20 @@ class Cult(CrudeObservable):
 		temp_log.append(("Projected end-of-month total:", self.funds, 0))
 		self.financial_log[self.date] = temp_log
 		return msg
+	
+	"""Calculate changes in publicity for this month."""
+	def publicity(self):
+		population_levels = [10,25,50,100,200,500,1000,2000,5000]
+		fame_from_size = 0
+		cult_size = len(self.membership)
+		for pop in population_levels:
+			if cult_size > pop:
+				fame_from_size += 10
+			else:
+				break #Nope, done here.
+		baseline_fame = (fame_from_size + (self.max_fame / 2)) / 2
+		self.fame = nudgeTowardsAverage(self.fame, baseline_fame)
+		return "baseline: %d Fame: %d.\n" % (baseline_fame, self.fame)
 		
 	def loyaltyChecks(self):
 		msg = ""

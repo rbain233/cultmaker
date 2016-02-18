@@ -23,8 +23,16 @@ class GameObject(CrudeObservable):
 		
 	def advanceMonth(self):
 		#Do all the things necessary to move the game ahead one month.
-		#Do functions in here - cult activities, enemies, govenment, media, random stuff....
+		#Do functions in here - cult activities, enemies, government, media, random stuff....
 		#And advance to next month.
+		
+		#Enemy stuff
+		#Check if cult gets attention.
+		#The higher your fame, the more chance media will pay attention.
+		#Fame is the main factor if the government will pay attention, but so are criminal members, militiant, pacifist, muslim, political, or psychedelic beliefs.
+		#enemies always pay attention, but can't always do much.
+		
+		
 		self.event_log += self.cult.doMonth(self.date)
 		
 		next_month = self.date.month + 1
