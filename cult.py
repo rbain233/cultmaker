@@ -231,13 +231,16 @@ class Cult(CrudeObservable):
 
 	def buyStuff(self):
 		#buy all the items specified.
+		ret = "" #debug
 		for m in self.shopping_list:
 			qty = self.shopping_list[m]
-			self.funds -= qty * m.unit_cost
+			cost = qty * m.unit_cost
+			self.funds -= cost
 			if not self.supplies.has_key(m.internal_name):
 				self.supplies[m.internal_name] = qty
 			else:
 				self.supplies[m.internal_name] += qty 
+			ret += " buying %d of %s for %d.\n" % (qty, m.internal_name, cost)
 		return ""
 
 	#return a word instead of a number for the 'fame' stat		
@@ -333,6 +336,7 @@ class Cult(CrudeObservable):
 				if not percentCheck(cultist.sunk_cost):
 					cultist.sunk_cost += random.randint(1,4) #Sinking more...
 			else:
+				self.unassignCultists([cultist]) #Whoops, they still working after quitting!
 				cultist.rank = Person.RANK_EX
 				quit_count += 1
 				self.ex_members.append(cultist)
@@ -522,6 +526,13 @@ class Cult(CrudeObservable):
 		else:
 			print "Error: Effort to assign people to unknown labor pool", department.name
 
+	"""When we don't need to assign them somewhere else yet."""
+	def unassignCultists(self, cultists):
+		for c in cultists:
+			if c.department: #Make sure they're not in two departments at once.
+				c.department.removePerson(c) 
+		self._docallbacks()
+		
 	def removeLabor(self, department, cultists):
 		if department in self.departments:
 			d = self.departments[department]
