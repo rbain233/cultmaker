@@ -188,6 +188,7 @@ class Cult(CrudeObservable):
 		self.last_month_morale = 0
 		self.financial_log = {datetime.date(1998,4,1): (("starting funds", 999, 0), ("people buying crap", 1, 0),("End of month total", 1000,0))} #Date: (tuple of (name, gain, loss))? Should work....
 		self.last_month_membership_count = 1
+		self.shopping_list = {}
 	
 	def doMonth(self, date):
 		self.date = date
@@ -200,6 +201,7 @@ class Cult(CrudeObservable):
 		self.last_month_morale = self.calculateAverageMorale() #(deliberately inaccurate)
 		
 		msg = ""
+		msg += self.buyStuff()
 		msg += self.doJobs()
 		msg += self.publicity()
 		msg += self.loyaltyChecks()
@@ -226,6 +228,17 @@ class Cult(CrudeObservable):
 				recruit.morale = random.randint(self.recruit_base_morale_min, self.recruit_base_morale_max)
 				new_recruits.append(recruit)
 		return new_recruits
+
+	def buyStuff(self):
+		#buy all the items specified.
+		for m in self.shopping_list:
+			qty = self.shopping_list[m]
+			self.funds -= qty * m.unit_cost
+			if not self.supplies.has_key(m.internal_name):
+				self.supplies[m.internal_name] = qty
+			else:
+				self.supplies[m.internal_name] += qty 
+		return ""
 
 	#return a word instead of a number for the 'fame' stat		
 	def getFameTitle(self):

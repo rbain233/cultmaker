@@ -20,7 +20,6 @@ class GameObject(CrudeObservable):
 		self.date = None
 		self.event_log = ""  #Just save a string?
 		
-		
 	def advanceMonth(self):
 		#Do all the things necessary to move the game ahead one month.
 		#Do functions in here - cult activities, enemies, government, media, random stuff....
@@ -32,7 +31,7 @@ class GameObject(CrudeObservable):
 		#Fame is the main factor if the government will pay attention, but so are criminal members, militiant, pacifist, muslim, political, or psychedelic beliefs.
 		#enemies always pay attention, but can't always do much.
 		
-		
+		#Buy stuff.
 		self.event_log += self.cult.doMonth(self.date)
 		
 		next_month = self.date.month + 1
@@ -82,11 +81,12 @@ class GameStartPanel(wx.Panel):
 		self.SetSizer(self.sizer)
 		
 class MainCultPanel(wx.Panel):
-	def __init__(self, parent, game):
+	def __init__(self, parent, game, main_window):
 		wx.Panel.__init__(self, parent)
 		self.game = game
 		self.cult = game.cult
 		cult = game.cult
+		self.main_window = main_window
 		
 		cult.addCallback(self.update)
 		self.game.addCallback(self.gameUpdate)
@@ -94,6 +94,8 @@ class MainCultPanel(wx.Panel):
 		self.last_month_funds = 0
 		self.last_month_membership = 0
 		self.last_month_morale = 0
+		
+		self.month_started_here = True #Used to keep advanceMonth from starting an infinite loop.
 		
 		self.sizer = wx.BoxSizer(wx.VERTICAL)
 		#Running cult: Has general cult info page.
@@ -210,7 +212,7 @@ class MainCultPanel(wx.Panel):
 	def advanceMonth(self, evt):
 		#TODO: Add some logic to prompt user if they have a lot of unallocated meeples or similar.
 		print "Next month!"
-		self.game.advanceMonth()
+		self.main_window.advanceMonth()
 
 #One line, with name, mouseover desc, and a -/#/+ control
 class InventoryBuyControl(wx.Panel):
@@ -271,7 +273,10 @@ class InventoryBuyControl(wx.Panel):
 		if self.buy_amount < 0:
 			self.buy_amount = 0
 		self.setBuyField()
-		
+	
+	def getBuyAmount(self):
+		return self.buy_amount
+	
 	def setInventory(self, n):
 		self.inventory_field.SetLabel(str(n) + " in stock")
 	
@@ -298,14 +303,24 @@ class InventoryPanel(wx.Panel):
 					self.buy_controls[m] = ibc
 					self.sizer.Add(ibc)
 		for item in cult.supplies:
+			m = merch.findMerch(item)
 			#It shouldn't be possible to have an inventory of items you can't make...
-			self.buy_controls[m].setInventory(cult.getSupplies(item.internal_name))
+			self.buy_controls[m].setInventory(cult.getSupplies(item))
 		for m in self.buy_controls:
 			if not self.buy_controls[m].checkbox_monthly.GetValue():
 				self.buy_controls[m].clearBuyField() #If it's not monthly, reset to 0 every month.
 		self.sizer.Layout()
 		#Should keep a count of available money.
 	
+	"""Call this before doing the game's monthly method."""
+	def advanceMonth(self):
+		#Empty cult shopping list.
+		self.cult.shopping_list = {}
+		for m in self.buy_controls:
+			qty = self.buy_controls[m].getBuyAmount()
+			if qty > 0:
+				self.cult.shopping_list[m] = qty
+		
 	def btnUpdate(self):
 		pass
 		
@@ -606,6 +621,9 @@ class MainWindow(wx.Frame):
 		self.game = game_obj
 		self.game.addCallback(self.game_update)
 		
+		#Pages that can directly (or indirectly) effect the game or the cult.
+		self.game_control_pages = []
+		
 		# Setting up the menu.
 		filemenu= wx.Menu()
 
@@ -689,6 +707,8 @@ class MainWindow(wx.Frame):
 	def addStartPages(self):
 		#Put in all the game-startup tabs. (Just one, right now.)
 		self.nb.DeleteAllPages()
+		self.game_control_pages = []
+		self.panel_inventory = None #Got to clear this.
 		self.nb.AddPage(GameStartPanel(self), "Start")
 		#And initialize them.
 		pass
@@ -726,7 +746,7 @@ class MainWindow(wx.Frame):
 		if self.game.cult:
 			nb = self.nb
 			self.nb.DeleteAllPages()
-			panel_main = MainCultPanel(nb, self.game)
+			panel_main = MainCultPanel(nb, self.game, self)
 			self.nb.AddPage(panel_main, "Main")
 			panel_leader = ExamplePanel(nb, "Leader")
 			self.nb.AddPage(panel_leader, "Leader")
@@ -738,19 +758,38 @@ class MainWindow(wx.Frame):
 			self.nb.AddPage(panel_money, "Finance")
 			panel_property = PropertyPanel(nb, self.game)
 			self.nb.AddPage(panel_property, "Property")
-			panel_inventory = InventoryPanel(nb, self.game)
-			self.nb.AddPage(panel_inventory, "Inventory")
+			self.panel_inventory = InventoryPanel(nb, self.game)
+			self.nb.AddPage(self.panel_inventory, "Inventory")
 			panel_beliefs = ExamplePanel(nb, "Beliefs")
 			self.nb.AddPage(panel_beliefs, "Beliefs")
 			panel_enemies = ExamplePanel(nb, "Enemies")
 			self.nb.AddPage(panel_enemies, "Enemies")
-			#self.game.advanceMonth() #Start 1st of next month. #NOT YET.
+
 			self.game.date.replace(day=1)
+			
+			self.game_control_pages = [panel_main,
+				panel_leader,
+				panel_people,
+				panel_work,
+				panel_money,
+				panel_property,
+				self.panel_inventory,
+				panel_beliefs,
+				panel_enemies]
+			
 			self.game_update(self.game)
 		else:
 			#Something went wrong, the cult's not initialized.
 			self.addStartPages()
-		
+	
+	def advanceMonth(self):
+		for page in self.game_control_pages:
+			if hasattr(page,"advanceMonth"):
+				if not hasattr(page,"month_started_here"):
+					page.advanceMonth()
+		self.game.advanceMonth()
+			
+			
 	def game_update(self, game):
 		if game and game.cult:
 			self.SetTitle("CULT MAKER: " + game.cult.name + " " + game.date.strftime("%B %Y"))
