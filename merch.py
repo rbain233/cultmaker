@@ -25,6 +25,8 @@ def radioAdCheck(self,cult):
 merch_list = [Merch("pamphlet_crude", "Crude Pamphlets (100)", "Black and white photocopied introductory pamphlets", 10, pamphletCheck),
 			Merch("pamphlet_slick", "Slick Pamphlets (100)", "Nicely printed color introductory pamphlets on glossy paper", 25, pamphletCheck),
 			Merch("paraphernalia", "Misc. Paraphernalia", "Prayer cloths, bumper stickers, amulets, posters, t-shirts and other things to sell to believers.", 4),
+			Merch("magazine_ad", "Magazine Ad", "An ad for the cult in a magazine", 250, radioAdCheck),
+			Merch("internet_ad", "Internet Ad", "An ad for the cult on websites", 500, radioAdCheck),
 			Merch("radio_ad", "Radio Ad", "A quick ad for the cult on radio stations", 2000, radioAdCheck),
 			Merch("tv_ad", "TV Ad", "A quick ad for the cult on TV stations", 5000, radioAdCheck),
 			Merch("book1", "Book of Scriptures, volume 1 (100)", "A book containing some of the cult's doctrines, suitable for new recruits", 500, bookCheck)

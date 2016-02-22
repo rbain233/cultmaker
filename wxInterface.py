@@ -785,7 +785,7 @@ class MainWindow(wx.Frame):
 	def advanceMonth(self):
 		for page in self.game_control_pages:
 			if hasattr(page,"advanceMonth"):
-				if not hasattr(page,"month_started_here"):
+				if not hasattr(page,"month_started_here"): #Avoid infinite recursion
 					page.advanceMonth()
 		self.game.advanceMonth()
 			

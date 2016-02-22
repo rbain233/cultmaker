@@ -204,6 +204,7 @@ class Cult(CrudeObservable):
 		msg += self.buyStuff()
 		msg += self.doJobs()
 		msg += self.publicity()
+		msg += self.monthlyPassiveRecruitment() #Should these be in a different order?
 		msg += self.loyaltyChecks()
 		msg += self.promoteOuterCheck()
 		msg += self.promoteRecruitsCheck()
@@ -447,6 +448,54 @@ class Cult(CrudeObservable):
 			msg += "A total of %d in donations this month.\n" % total_donations
 		msg += "The cult has a total of $%d.\n" % self.funds
 		return msg
+	
+	def monthlyPassiveRecruitment(self):
+		#use up any purchased ads.
+		#ads may attract people, also may raise fame.
+		ads = {"magazine_ad" : 1, "internet_ad": 2, "radio_ad": 2, "tv_ad": 5}
+		msg = ""
+		effective_fame = self.fame
+		
+		for m_name in ads:
+			if self.supplies.has_key(m_name):
+				n = self.supplies[m_name]
+				if n > 0:
+					self.supplies[m_name] = 0 #Use them all up.
+					effective_fame += (ads[m_name] * n)
+					for ii in range(n):
+						if random.randint(1, self.fame) >= ads[m_name]:
+							self.fame += 1 #SMALL possibility of an ad improving the cult's fame...
+					msg += "Ran %d %s.\n" % (n, findMerch(m_name).name)
+				#This should probably have a diminishing returns effect, so you can't just spam your way to universal recognition?
+		
+		#If the cult's not secretive, random people may hear about it and want to join.
+		potential_audience =  effective_fame * effective_fame
+		
+		fanaticism_mod = 10
+		if self.popularity >= 75:
+			multiplier = 0.05 
+			fanaticism_mod = 20
+		elif self.popularity >= 50:
+			multiplier = 0.04
+		elif self.popularity >= 25:
+			multiplier = 0.03
+		elif self.popularity >= 0:
+			multiplier = 0.02
+		else:
+			multiplier = 0.01
+			fanaticism_mod = 40 #Hated groups get more fanatical recruits.
+		
+		audience = random.randint(0, int(potential_audience * multiplier))
+		new_recruits = []
+		for ii in range(audience):
+			recruit = Person()
+			recruit.fanaticism = fanaticism_mod
+			recruit.morale = 50
+			new_recruits.append(recruit)
+		if len(new_recruits) > 0:
+			msg += "%d new members were attracted to join the cult!\n" % len(new_recruits)
+		return msg
+		
 	
 	def getRecruits(self):
 		ret = []
