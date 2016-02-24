@@ -490,7 +490,32 @@ class PresentFinancePanel(wx.Panel):
 			total += self.list[lp].gain + self.list[lp].loss
 		if "end_total_line" in dir(self):
 			self.end_total_line.setTotal(total)
+
+"""Page for adding and removing
+Cult beliefs
+Edicts
+"""
+class BeliefsPanel(wx.Panel):
+	def __init__(self, parent, game):
+		wx.Panel.__init__(self, parent)
+		self.game = game
+		self.cult = game.cult
+		game.cult.addCallback(self.update)
+		#How's this going to work?
+		
+	def update(self, cult):
+		#Mostly, check to see if you have enough 'unspent' dogma to add new beliefs/edicts.
+		#Should some edicts have higher costs?
+		#Adding new edicts can cause cultists to make tests of faith.
+		#So can radical changes in beliefs?
+		#How about removing edicts?
+		pass
 	
+	#Don't think it needs one of these.
+	"""
+	def advanceMonth(self):
+		pass
+	"""
 #This one is static - same layout, but it's getting info from a file or text?
 class PastFinancePanel(wx.Panel):
 	def __init__(self, parent, game):
@@ -760,7 +785,7 @@ class MainWindow(wx.Frame):
 			self.nb.AddPage(panel_property, "Property")
 			self.panel_inventory = InventoryPanel(nb, self.game)
 			self.nb.AddPage(self.panel_inventory, "Inventory")
-			panel_beliefs = ExamplePanel(nb, "Beliefs")
+			panel_beliefs = BeliefsPanel(nb, "Beliefs")
 			self.nb.AddPage(panel_beliefs, "Beliefs")
 			panel_enemies = ExamplePanel(nb, "Enemies")
 			self.nb.AddPage(panel_enemies, "Enemies")

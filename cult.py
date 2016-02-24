@@ -181,6 +181,7 @@ class Cult(CrudeObservable):
 		self.recruit_base_morale_min = 40 #need ways to avoid this...
 		self.recruit_base_morale_max = 80 #need ways to avoid this...
 		self.dogma = 10
+		self.spent_dogma = 0
 		self.supplies = {} #Pamphlets, books and so on.
 		self.last_month_fame = 0
 		self.last_month_popularity = 0
