@@ -1,6 +1,3 @@
-import cult
-"""Beliefs"""
-
 class Belief:
 	def __init__(self, internal_name, name, desc, prereq_beliefs = [], opposed_beliefs = [], other_check_function = None):
 		self.name = name
@@ -50,4 +47,4 @@ belief_master_list = BeliefMasterList()
 
 #TODO:  Make unit test.
 if __name__ == "__main__":
-	
+	print belief_master_list
