@@ -6,6 +6,7 @@ import math
 from merch import *
 from mvc import *
 import datetime
+import Belief
 
 class Doctrine:
 	def __init__(self, name, popularity_mod = 0):
