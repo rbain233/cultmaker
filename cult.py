@@ -666,7 +666,10 @@ class Cult(CrudeObservable):
 					sum += 10
 				if self.authoritarianism > 75:
 					sum += 10
-		average_morale = sum / len(self.membership)
+		if len(self.membership) > 0:
+			average_morale = sum / len(self.membership)
+		else:
+			average_morale = 50
 		if not accurate:
 			leader = self.getLeader()[0]
 			if leader.fanaticism > 50:
@@ -675,7 +678,26 @@ class Cult(CrudeObservable):
 				average_morale += 10
 		return min(average_morale, 99) #Can't go over 100?  Or will it matter?
 		
+	def addDoctrine(self, doctrine_name):
+		if doctrine_name not in self.doctrines:
+			self.doctrines.append(doctrine_name)
 		
+	def removeDoctrine(self, doctrine_name):
+		if doctrine_name in self.doctrines:
+			self.doctrines.pop(self.doctrines.index(doctrine_name))
+			#TODO: This probably ought to cause some tests of faith, just removing an important doctrine like that....
+			
+	def getDoctrinalPopularity(self):
+		max_effect = 0
+		max_weirdness = 0
+		for ii in self.doctrines:
+			b = Belief.belief_master_list.getBelief(self.doctrines[ii])
+			if b:
+				if abs(b.popularity) > abs(max_effect):
+					max_effect = b.popularity
+					#Should it just always use the worst?  eh, I'll go with this for now.
+		return max_effect
+			
 #Having outer circle members allows:
 #Orientation/Welcome/Indoctrination
 #Fundraising/panhandling

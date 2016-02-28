@@ -15,13 +15,17 @@ class Belief:
 			if not self.other_check_function(cult):
 				return False
 		if self.prereq_beliefs:
-			for b in self.prereq_beliefs:
-				if b not in cult.doctrines:
-					return False
+			if cult:
+				for b in self.prereq_beliefs:
+					if b not in cult.doctrines:
+						return False
+			else:
+				return false
 		if self.opposed_beliefs:
-			for b in self.opposed_beliefs:
-				if b in cult.doctrines:
-					return False
+			if cult:
+				for b in self.opposed_beliefs:
+					if b in cult.doctrines:
+						return False
 		return True
 	
 			
@@ -75,7 +79,10 @@ class BeliefMasterList:
 			return None
 	
 	def isSecondaryBelief(self, cult):
-		return (len(cult.doctrine) > 1)
+		if cult:
+			return (len(cult.doctrine) > 1)
+		else:
+			return False #If this is called with a 'none' in the make-a-cult screen.
 		
 belief_master_list = BeliefMasterList()
 

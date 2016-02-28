@@ -4,6 +4,7 @@ import wx
 import datetime
 from cult import *
 from person import *
+import Belief
 
 bonus_list = ["had a well-paying job", "was independently wealthy", "was a talented artist and writer", "already had attracted several followers", "had a Doctorate degree", "was already somewhat famous"]
 
@@ -89,7 +90,10 @@ class SetupPage(wx.Panel):
 		
 		self.bonus_select_field = wx.ComboBox(self, choices=bonus_list, style=wx.CB_READONLY)
 		
-		doctrine_choices = [d.name for d in doctrine_list]
+		#doctrine_choices = [d.name for d in doctrine_list]
+		doctrines = [Belief.belief_master_list.list[b] for b in Belief.belief_master_list.list if Belief.belief_master_list.list[b].isBeliefAvailable(None)]
+		doctrine_choices = [d.name for d in doctrines]
+		self.doctrine_list = [d.internal_name for d in doctrines]
 		self.doctrine_select_field = wx.ComboBox(self, choices=doctrine_choices, style=wx.CB_READONLY)
 		
 		sincerity_choices = ['created it as a scam', 'was themselves somewhat doubtful', 'was a fervent believer themselves']
@@ -206,19 +210,23 @@ class SetupPage(wx.Panel):
 		self.cult.founding_date = self.founding_date
 		
 		self.leader.name = self.leader_name_field.GetValue()
+		self.leader.rank= Person.RANK_LEADER
 		g = self.gender_select_field.GetValue()
 		if g == '(male)':
 			self.leader.gender = 'm'
 		else:
 			self.leader.gender = 'f'
 		self.leader.birthday = self.leader_birthday_date_field.GetValue()
+		#TODO: Need to make the sincerity and advantage dropdowns work.
+		
 		#Load the game with them.
 		#Go to the main loop.
 		self.cult.leader = self.leader
 		self.game.cult = self.cult
+		self.game.cult.membership = [self.leader]
 		self.game.leader = self.leader
 		self.game.date = self.cult.founding_date
-		
+		self.cult.doctrines = [self.doctrine_list[self.doctrine_select_field.GetSelection()]]
 		self.startgame()
 		pass
 """

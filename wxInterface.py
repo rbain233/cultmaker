@@ -785,7 +785,7 @@ class MainWindow(wx.Frame):
 			self.nb.AddPage(panel_property, "Property")
 			self.panel_inventory = InventoryPanel(nb, self.game)
 			self.nb.AddPage(self.panel_inventory, "Inventory")
-			panel_beliefs = BeliefsPanel(nb, "Beliefs")
+			panel_beliefs = BeliefsPanel(nb, self.game)
 			self.nb.AddPage(panel_beliefs, "Beliefs")
 			panel_enemies = ExamplePanel(nb, "Enemies")
 			self.nb.AddPage(panel_enemies, "Enemies")
