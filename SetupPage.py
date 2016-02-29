@@ -217,7 +217,7 @@ class SetupPage(wx.Panel):
 		else:
 			self.leader.gender = 'f'
 		self.leader.birthday = self.leader_birthday_date_field.GetValue()
-		#TODO: Need to make the sincerity and advantage dropdowns work.
+		#TODO: Need to make the advantage dropdown work.
 		
 		#Load the game with them.
 		#Go to the main loop.
@@ -227,6 +227,8 @@ class SetupPage(wx.Panel):
 		self.game.leader = self.leader
 		self.game.date = self.cult.founding_date
 		self.cult.doctrines = [self.doctrine_list[self.doctrine_select_field.GetSelection()]]
+		
+		self.cult.leader.fanaticism = (0, 40, 80)[self.sincerity_select_field.GetSelection()]
 		self.startgame()
 		pass
 """
