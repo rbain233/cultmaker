@@ -7,6 +7,7 @@ import wxLaborPoolControls
 import cult
 import person
 import merch
+import Belief
 #include <wx/html/htmlwin.h>
 
 """Trying to use wxPython to set up a UI for this game."""
@@ -502,8 +503,21 @@ class BeliefsPanel(wx.Panel):
 		self.cult = game.cult
 		game.cult.addCallback(self.update)
 		#How's this going to work?
+		self.sizer = wx.BoxSizer(wx.VERTICAL)
+		self.SetSizer(self.sizer)
+		self.update(self.cult)
 		
 	def update(self, cult):
+		self.sizer.Clear()
+		self.sizer.Add(wx.StaticText(self, label="Current Beliefs:"))
+		#Existing beliefs:
+		for b in cult.doctrines:
+			bb = Belief.belief_master_list.getBelief(b)
+			if bb:
+				self.sizer.Add(wx.StaticText(self, label=bb.name))
+		
+		#Available beliefs.
+		
 		#Mostly, check to see if you have enough 'unspent' dogma to add new beliefs/edicts.
 		#Should some edicts have higher costs?
 		#Adding new edicts can cause cultists to make tests of faith.
@@ -745,6 +759,7 @@ class MainWindow(wx.Frame):
 		self.game.cult.short_name = "SubGenius"
 		self.game.cult.members_name = "SubGenii"
 		self.game.cult.founding_date = date(1998,07,05)
+		self.game.cult.doctrines= ["ufo", "apocalyptic", "funny"]
 		self.game.leader.name = 'J.R. "Bob" Dobbs'
 		self.game.leader.gender = 'm'
 		self.game.leader.morale = 55
