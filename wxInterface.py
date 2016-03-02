@@ -517,6 +517,12 @@ class BeliefsPanel(wx.Panel):
 				self.sizer.Add(wx.StaticText(self, label=bb.name))
 		
 		#Available beliefs.
+		self.sizer.Add(wx.StaticText(self, label="Available Beliefs:"))
+		for bb in Belief.belief_master_list.getAvailableBeliefs(cult):
+			if bb.internal_name in cult.doctrines:
+				#print "Nope.", bb.internal_name
+				continue
+			self.sizer.Add(wx.StaticText(self, label=bb.name))
 		
 		#Mostly, check to see if you have enough 'unspent' dogma to add new beliefs/edicts.
 		#Should some edicts have higher costs?

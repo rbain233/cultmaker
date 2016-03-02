@@ -40,6 +40,8 @@ class Belief:
 
 class BeliefMasterList:
 	#Singleton?  Bleh, trying to do them in Python looks to be a pain.
+	ALL_BELIEFS = "ALL"
+	
 	def __init__(self):
 		self.list = {}
 		self.addBelief(Belief("christian", "Christian", "The most popular faith in America. Well-regarded and mainstream.", popularity = 10))
@@ -51,7 +53,7 @@ class BeliefMasterList:
 		self.addBelief(Belief("muslim","Muslim","Currently less popular than Satanism.", popularity = -15))
 		self.addBelief(Belief("self help","Self Help","Improve yourself! And your bank account.", popularity = 10, weirdness = -10))
 		self.addBelief(Belief("ufo","UFO","Contact the Benevolent Space Brothers, prepare for the Invasion, or both.", weirdness = 5))
-		self.addBelief(Belief("buddhism","buddhism","Zen, meditation, and liberation from attachments. Like your wallet."))
+		self.addBelief(Belief("buddhism","Buddhism","Zen, meditation, and liberation from attachments. Like your wallet."))
 		self.addBelief(Belief("yoga","Yoga","Contortions both physical and logical."))
 		self.addBelief(Belief("apocalyptic","Apocalyptic","The End Is Coming!!! Real soon now. Any minute now. Annnny minute....", weirdness = 5, other_check_function = self.isSecondaryBelief))
 		self.addBelief(Belief("militant","Militant","You're ready to get violent about your faith, whatever it is.", opposed_beliefs=["pacifist"], other_check_function = self.isSecondaryBelief))
@@ -79,11 +81,20 @@ class BeliefMasterList:
 			return None
 	
 	def isSecondaryBelief(self, cult):
+		if cult == BeliefMasterList.ALL_BELIEFS:
+			return True
 		if cult:
-			return (len(cult.doctrine) > 1)
+			return (len(cult.doctrines) > 1)
 		else:
 			return False #If this is called with a 'none' in the make-a-cult screen.
-		
+	
+	def getAvailableBeliefs(self, cult):
+		for n in self.list:
+			b = self.list[n]
+			if b.isBeliefAvailable(cult):
+				yield b
+				#look, ma, a generator!
+				
 belief_master_list = BeliefMasterList()
 
 class Edict:
