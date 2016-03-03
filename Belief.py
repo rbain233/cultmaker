@@ -66,7 +66,8 @@ class BeliefMasterList:
 		self.addBelief(Belief("funny","Funny","Yes, this cult is a joke. But that doesn't mean it's not True.", weirdness = 5, other_check_function = self.isSecondaryBelief))
 		self.addBelief(Belief("communist","Communist","Power to the People!", opposed_beliefs = ["objectivist"]))
 		self.addBelief(Belief("objectivist","Objectivist","Money to the Worthy!", opposed_beliefs = ["communist"]))
-		self.addBelief(Belief("isolationist","Isolationist","You want to get away from it all.", weirdness = 5, other_check_function = self.isSecondaryBelief))
+		self.addBelief(Belief("isolationist","Isolationist","You want to get away from it all.", weirdness = 5, other_check_function = self.isSecondaryBelief, opposed_beliefs=["evangelistic"]))
+		self.addBelief(Belief("evangelistic", "Evangelistic", "You want everyone to hear the cult's teachings and join.", other_check_function = self.isSecondaryBelief, opposed_beliefs=["isolationist", "secret"]))
 		
 		#self.addBelief(Belief("","",""))  #Probably plenty more where this came from...
 		
@@ -100,8 +101,59 @@ belief_master_list = BeliefMasterList()
 class Edict:
 	#Things the Leader can decree.  Can affect the way a cult operates.
 	#Some just cause tests of faith.
-	def __init__(self, internal_name, name, desc, effect=None):
+	def __init__(self, internal_name, name, desc, excluded_by=[], requires=[], effect=None, check_function = None):
+		self.internal_name = internal_name
+		self.name = name
+		self.desc = desc
+		self.excluded_by = excluded_by
+		self.requires = requires
+		self.effect = effect
+		self.check_function = check_function
 		pass
+	
+	def isAvailable(self, cult):
+		if not self.check_function(cult):
+			return False
+		for name in self.excluded_by:
+			if name in cult.doctrines:
+				return False
+		for name in self.requires:
+			if name not in cult.doctrines:
+				return False
+		return True
+		
+class MasterEdictList:
+	def __init__(self):
+		self.list = {}
+		self.addEdict(Edict("tithing_10", "Tithing 10%", "Members must donate 10% of their income."))
+		self.addEdict(Edict("tithing_15", "Tithing 15%", "Members must donate 15% of their income.", requires=["tithing_10"]))
+		self.addEdict(Edict("tithing_20", "Tithing 20%", "Members must donate 20% of their income.", requires=["tithing_10", "tithing_15"]))
+		self.addEdict(Edict("celibacy","Celibacy","Cultists are forbidden to have sex.", excluded_by=["free_love"]))
+		self.addEdict(Edict("free_love","Free Love","Just Say Yes.", excluded_by=["celibacy", "castration"]))
+		self.addEdict(Edict("castration","Castration","Sex is not only forbidden to cultists, it's about to be impossible.", requires=["celibacy"], check_function=self.goneCrazy))
+		self.addEdict(Edict("vegetarianism","Vegetarianism","No eating meat."))
+		self.addEdict(Edict("weird_diet","Weird Diet","Strange dietary requirements."))
+		self.addEdict(Edict("no_booze","No Alcohol","Cultists are forbidden booze."))
+		self.addEdict(Edict("no_drugs","No Drugs","Cultists are forbidden to take mind-altering substances.", excluded_by=["psychedelic"]))
+		self.addEdict(Edict("loyalty_oath","Loyalty Oath","Cultists must swear eternal allegiance to the cult."))
+		self.addEdict(Edict("secrecy_oath","Oath of Secrecy","Cultists swear not to reveal cult rituals or teachings to outsiders.", excluded_by = ["evangelistic"]))
+		self.addEdict(Edict("poverty_vow", "Vow of Poverty", "Give up all your worldly possessions!"))
+		self.addEdict(Edict("quit_job","Quit your job","Members are expected to work for the cult full-time."))
+		self.addEdict(Edict("dress_code","Dress Code","Cultists are expected to follow a strict dress code for normal clothing.", excluded_by=["weird_dress_code"]))
+		self.addEdict(Edict("weird_dress_code","Weird Dress Code","Cultists are expected to follow a strict dress code that's very unusual.", excluded_by=["dress_code"]))
+		self.addEdict(Edict("tattoos","Mandatory Tattoos","Cultists must get a cult symbol or slogan tattooed on them."))
+		self.addEdict(Edict("aggressive_donations","Aggressive Donations","Members are constantly exhorted to donate more money."))
+		#self.addEdict(Edict("","",""))
+		
+	def addEdict(self, edict):
+		self.list[edict.internal_name] = edict
+	
+	def goneCrazy(self, cult):
+		#TODO: Need to have some way of metering the Total Craziness of the cult - average or sum of Fanaticism, maybe? (Weighted toward craziness at the top...
+		#Average of (Leader.fanaticism, average inner circle fantaticism, average outer circle fanaticism)?
+		return False
+
+edict_master_list = MasterEdictList()
 
 #TODO:  Make unit test.
 if __name__ == "__main__":

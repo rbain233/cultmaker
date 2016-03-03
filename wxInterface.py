@@ -496,9 +496,10 @@ class PresentFinancePanel(wx.Panel):
 Cult beliefs
 Edicts
 """
-class BeliefsPanel(wx.Panel):
+class BeliefsPanel(wx.ScrolledWindow):
 	def __init__(self, parent, game):
-		wx.Panel.__init__(self, parent)
+		wx.ScrolledWindow.__init__(self, parent, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.VSCROLL)
+		self.SetScrollRate( 5, 5 )
 		self.game = game
 		self.cult = game.cult
 		game.cult.addCallback(self.update)
@@ -524,6 +525,10 @@ class BeliefsPanel(wx.Panel):
 				continue
 			self.sizer.Add(wx.StaticText(self, label=bb.name))
 		
+		self.sizer.Add(wx.StaticText(self, label="Available Edicts:"))
+		for name in Belief.edict_master_list.list:
+			edict = Belief.edict_master_list.list[name]
+			self.sizer.Add(wx.StaticText(self, label=edict.name))
 		#Mostly, check to see if you have enough 'unspent' dogma to add new beliefs/edicts.
 		#Should some edicts have higher costs?
 		#Adding new edicts can cause cultists to make tests of faith.
